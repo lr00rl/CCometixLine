@@ -161,26 +161,38 @@ impl ToolsSegment {
     }
 
     fn shorten_tool_name(name: &str) -> String {
-        // Map common tool names to short names
         match name {
-            "Read" | "read_file" => "Read".to_string(),
-            "Write" | "write_file" => "Write".to_string(),
-            "Edit" | "edit_file" => "Edit".to_string(),
-            "Bash" | "bash" => "Bash".to_string(),
-            "Glob" | "glob" => "Glob".to_string(),
-            "Grep" | "grep" => "Grep".to_string(),
-            "Task" | "task" => "Task".to_string(),
-            "TodoWrite" | "todo_write" => "Todo".to_string(),
-            "WebFetch" | "web_fetch" => "Web".to_string(),
-            "WebSearch" | "web_search" => "Search".to_string(),
-            other => {
-                // Truncate long names
-                if other.len() > 8 {
-                    format!("{}…", &other[..7])
-                } else {
-                    other.to_string()
-                }
-            }
+            // Standard file tools
+            "Read" | "read_file"                => "Read".to_string(),
+            "Write" | "write_file"              => "Write".to_string(),
+            "Edit" | "edit_file"                => "Edit".to_string(),
+            "MultiEdit"                         => "MEdit".to_string(),
+            "NotebookEdit"                      => "NbEdit".to_string(),
+            "NotebookRead"                      => "NbRead".to_string(),
+            // Shell / search
+            "Bash" | "bash"                     => "Bash".to_string(),
+            "Glob" | "glob"                     => "Glob".to_string(),
+            "Grep" | "grep"                     => "Grep".to_string(),
+            // Agent / task management
+            "Task" | "Agent" | "task"           => "Agent".to_string(),
+            "TaskCreate"                        => "TskNew".to_string(),
+            "TaskUpdate"                        => "TskUpd".to_string(),
+            "TaskGet"                           => "TskGet".to_string(),
+            "TaskList"                          => "TskLst".to_string(),
+            "TaskStop"                          => "TskStp".to_string(),
+            // Todo
+            "TodoWrite" | "todo_write"          => "Todo".to_string(),
+            // Web
+            "WebFetch" | "web_fetch"            => "Web".to_string(),
+            "WebSearch" | "web_search"          => "Search".to_string(),
+            // Plan mode
+            "EnterPlanMode"                     => "Plan".to_string(),
+            "ExitPlanMode"                      => "ExPlan".to_string(),
+            // Interaction
+            "AskUserQuestion"                   => "Ask".to_string(),
+            // Worktree
+            "EnterWorktree"                     => "Wktree".to_string(),
+            other => other.to_string(),
         }
     }
 }

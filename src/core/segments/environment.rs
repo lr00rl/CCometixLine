@@ -12,108 +12,139 @@ impl EnvironmentSegment {
         Self
     }
 
-    fn count_claude_md(cwd: &str) -> u32 {
-        let mut count = 0u32;
-
-        // Check cwd/.claude/CLAUDE.md
-        let cwd_claude = PathBuf::from(cwd).join(".claude");
-        if cwd_claude.join("CLAUDE.md").exists() {
-            count += 1;
-        }
-
-        // Check ~/.claude/CLAUDE.md
+    fn get_claude_md_paths(cwd: &str) -> Vec<String> {
+        let mut paths = Vec::new();
         if let Some(home) = dirs::home_dir() {
-            if home.join(".claude").join("CLAUDE.md").exists() {
-                count += 1;
+            let p = home.join(".claude").join("CLAUDE.md");
+            if p.exists() {
+                paths.push("~/.claude/CLAUDE.md".to_string());
             }
         }
-
-        count
-    }
-
-    fn count_rules(cwd: &str) -> u32 {
-        let mut count = 0u32;
-
-        // Count ~/.claude/rules/*.md
-        if let Some(home) = dirs::home_dir() {
-            let rules_dir = home.join(".claude").join("rules");
-            count += Self::count_md_files(&rules_dir);
+        let p = PathBuf::from(cwd).join(".claude").join("CLAUDE.md");
+        if p.exists() {
+            paths.push(".claude/CLAUDE.md".to_string());
         }
-
-        // Count cwd/.claude/rules/*.md
-        let cwd_rules = PathBuf::from(cwd).join(".claude").join("rules");
-        count += Self::count_md_files(&cwd_rules);
-
-        count
+        paths
     }
 
-    fn count_md_files(dir: &Path) -> u32 {
+    fn get_rule_names(cwd: &str) -> Vec<String> {
+        let mut names = Vec::new();
+        let dirs_to_check = [
+            dirs::home_dir().map(|h| h.join(".claude").join("rules")),
+            Some(PathBuf::from(cwd).join(".claude").join("rules")),
+        ];
+        for dir_opt in dirs_to_check {
+            if let Some(dir) = dir_opt {
+                names.extend(Self::md_filestems(&dir));
+            }
+        }
+        names
+    }
+
+    fn md_filestems(dir: &Path) -> Vec<String> {
         if !dir.exists() {
-            return 0;
+            return Vec::new();
         }
-        fs::read_dir(dir)
+        let mut names: Vec<String> = fs::read_dir(dir)
             .map(|entries| {
                 entries
                     .filter_map(|e| e.ok())
-                    .filter(|e| {
-                        e.path()
-                            .extension()
-                            .and_then(|s| s.to_str())
-                            .map(|ext| ext.eq_ignore_ascii_case("md"))
-                            .unwrap_or(false)
+                    .filter_map(|e| {
+                        let p = e.path();
+                        if p.extension().and_then(|s| s.to_str()).map(|x| x.eq_ignore_ascii_case("md")).unwrap_or(false) {
+                            p.file_stem().and_then(|s| s.to_str()).map(|s| s.to_string())
+                        } else {
+                            None
+                        }
                     })
-                    .count() as u32
+                    .collect()
             })
-            .unwrap_or(0)
+            .unwrap_or_default();
+        names.sort();
+        names
     }
 
-    fn count_mcps_and_hooks(cwd: &str) -> (u32, u32) {
-        let mut mcp_count = 0u32;
-        let mut hook_count = 0u32;
+    fn get_mcp_and_hook_names(cwd: &str) -> (Vec<String>, Vec<String>, Vec<String>) {
+        let mut mcp_names: Vec<String> = Vec::new();
+        let mut hook_events: Vec<String> = Vec::new(); // event names
+        let mut hook_cmds: Vec<String> = Vec::new();   // hook command snippets
 
-        // Parse settings from ~/.claude/settings.json and cwd/.claude/settings.json
-        let paths = vec![
-            dirs::home_dir()
-                .map(|h| h.join(".claude").join("settings.json")),
+        let paths = [
+            dirs::home_dir().map(|h| h.join(".claude").join("settings.json")),
             Some(PathBuf::from(cwd).join(".claude").join("settings.json")),
         ];
 
-        for path_opt in paths {
+        for path_opt in &paths {
             let path = match path_opt {
                 Some(p) => p,
                 None => continue,
             };
-
             if !path.exists() {
                 continue;
             }
-
-            let content = match fs::read_to_string(&path) {
+            let content = match fs::read_to_string(path) {
                 Ok(c) => c,
                 Err(_) => continue,
             };
-
             let value: serde_json::Value = match serde_json::from_str(&content) {
                 Ok(v) => v,
                 Err(_) => continue,
             };
 
-            // Count MCP servers
             if let Some(mcps) = value.get("mcpServers").and_then(|v| v.as_object()) {
-                mcp_count += mcps.len() as u32;
+                for name in mcps.keys() {
+                    if !mcp_names.contains(name) {
+                        mcp_names.push(name.clone());
+                    }
+                }
             }
 
-            // Count hooks (hooks is an object with event keys, each containing arrays)
             if let Some(hooks) = value.get("hooks").and_then(|v| v.as_object()) {
-                for (_event, handlers) in hooks {
+                for (event, handlers) in hooks {
                     if let Some(arr) = handlers.as_array() {
-                        hook_count += arr.len() as u32;
+                        for handler in arr {
+                            // event name (deduplicated)
+                            if !hook_events.contains(event) {
+                                hook_events.push(event.clone());
+                            }
+                            // Try to get the command text for detail display
+                            let cmd = handler
+                                .get("hooks")
+                                .and_then(|h| h.as_array())
+                                .and_then(|a| a.first())
+                                .and_then(|h| h.get("command"))
+                                .and_then(|c| c.as_str())
+                                .unwrap_or("")
+                                .trim();
+                            if !cmd.is_empty() {
+                                // Shorten: take first word/token as identifier
+                                let short = cmd.split_whitespace().next().unwrap_or(cmd);
+                                let short = short.rsplit('/').next().unwrap_or(short); // basename
+                                let label = format!("{}: {}", Self::shorten_event(event), short);
+                                if !hook_cmds.contains(&label) {
+                                    hook_cmds.push(label);
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
 
-        (mcp_count, hook_count)
+        mcp_names.sort();
+        hook_events.sort();
+        (mcp_names, hook_events, hook_cmds)
+    }
+
+    fn shorten_event(event: &str) -> &str {
+        match event {
+            "PreToolUse" => "pre",
+            "PostToolUse" => "post",
+            "Notification" => "notify",
+            "Stop" => "stop",
+            "SubagentStop" => "sub-stop",
+            other => other,
+        }
     }
 }
 
@@ -121,36 +152,63 @@ impl Segment for EnvironmentSegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
         let cwd = &input.workspace.current_dir;
 
-        let claude_md_count = Self::count_claude_md(cwd);
-        let rules_count = Self::count_rules(cwd);
-        let (mcp_count, hook_count) = Self::count_mcps_and_hooks(cwd);
+        let config = crate::config::Config::load().ok();
+        let show_names = config.as_ref()
+            .and_then(|c| c.segments.iter().find(|s| s.id == SegmentId::Environment))
+            .and_then(|sc| sc.options.get("show_names"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
 
-        let total = claude_md_count + rules_count + mcp_count + hook_count;
+        let claude_md_paths = Self::get_claude_md_paths(cwd);
+        let rule_names = Self::get_rule_names(cwd);
+        let (mcp_names, hook_events, hook_cmds) = Self::get_mcp_and_hook_names(cwd);
+
+        let total = claude_md_paths.len() + rule_names.len() + mcp_names.len() + hook_events.len();
         if total == 0 {
             return None;
         }
 
-        let mut parts = Vec::new();
-        if claude_md_count > 0 {
-            parts.push(format!("{} CLAUDE.md", claude_md_count));
-        }
-        if rules_count > 0 {
-            parts.push(format!("{} rules", rules_count));
-        }
-        if mcp_count > 0 {
-            parts.push(format!("{} MCPs", mcp_count));
-        }
-        if hook_count > 0 {
-            parts.push(format!("{} hooks", hook_count));
-        }
-
-        let primary = parts.join(" · ");
+        let primary = if show_names {
+            // Detail mode: list names
+            let mut parts = Vec::new();
+            if !claude_md_paths.is_empty() {
+                parts.push(format!("CLAUDE.md: {}", claude_md_paths.join(", ")));
+            }
+            if !rule_names.is_empty() {
+                parts.push(format!("rules: {}", rule_names.join(", ")));
+            }
+            if !mcp_names.is_empty() {
+                parts.push(format!("MCPs: {}", mcp_names.join(", ")));
+            }
+            if !hook_cmds.is_empty() {
+                parts.push(format!("hooks: {}", hook_cmds.join(", ")));
+            } else if !hook_events.is_empty() {
+                parts.push(format!("hooks: {}", hook_events.join(", ")));
+            }
+            parts.join(" | ")
+        } else {
+            // Compact mode: counts
+            let mut parts = Vec::new();
+            if !claude_md_paths.is_empty() {
+                parts.push(format!("{} CLAUDE.md", claude_md_paths.len()));
+            }
+            if !rule_names.is_empty() {
+                parts.push(format!("{} rules", rule_names.len()));
+            }
+            if !mcp_names.is_empty() {
+                parts.push(format!("{} MCPs", mcp_names.len()));
+            }
+            if !hook_events.is_empty() {
+                parts.push(format!("{} hooks", hook_events.len()));
+            }
+            parts.join(" · ")
+        };
 
         let mut metadata = HashMap::new();
-        metadata.insert("claude_md".to_string(), claude_md_count.to_string());
-        metadata.insert("rules".to_string(), rules_count.to_string());
-        metadata.insert("mcps".to_string(), mcp_count.to_string());
-        metadata.insert("hooks".to_string(), hook_count.to_string());
+        metadata.insert("claude_md".to_string(), claude_md_paths.len().to_string());
+        metadata.insert("rules".to_string(), rule_names.len().to_string());
+        metadata.insert("mcps".to_string(), mcp_names.len().to_string());
+        metadata.insert("hooks".to_string(), hook_events.len().to_string());
 
         Some(SegmentData {
             primary,

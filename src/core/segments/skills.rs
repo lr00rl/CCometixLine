@@ -150,7 +150,7 @@ impl Segment for SkillsSegment {
 
         let primary = parts.join(" | ");
         let total = skills.len();
-        let secondary = format!("{} skill{}", total, if total == 1 { "" } else { "s" });
+        let secondary = format!("=> {} skill{}", total, if total == 1 { "" } else { "s" });
 
         let mut metadata = HashMap::new();
         metadata.insert("running".to_string(), running.len().to_string());

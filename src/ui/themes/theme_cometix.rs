@@ -7,6 +7,7 @@ pub fn model_segment() -> SegmentConfig {
     SegmentConfig {
         id: SegmentId::Model,
         enabled: true,
+        line: 0,
         icon: IconConfig {
             plain: "🤖".to_string(),
             nerd_font: "\u{e26d}".to_string(),
@@ -25,6 +26,7 @@ pub fn directory_segment() -> SegmentConfig {
     SegmentConfig {
         id: SegmentId::Directory,
         enabled: true,
+        line: 0,
         icon: IconConfig {
             plain: "📁".to_string(),
             nerd_font: "\u{f024b}".to_string(),
@@ -43,6 +45,7 @@ pub fn git_segment() -> SegmentConfig {
     SegmentConfig {
         id: SegmentId::Git,
         enabled: true,
+        line: 0,
         icon: IconConfig {
             plain: "🌿".to_string(),
             nerd_font: "\u{f02a2}".to_string(),
@@ -65,6 +68,7 @@ pub fn context_window_segment() -> SegmentConfig {
     SegmentConfig {
         id: SegmentId::ContextWindow,
         enabled: true,
+        line: 0,
         icon: IconConfig {
             plain: "⚡️".to_string(),
             nerd_font: "\u{f49b}".to_string(),
@@ -83,6 +87,7 @@ pub fn cost_segment() -> SegmentConfig {
     SegmentConfig {
         id: SegmentId::Cost,
         enabled: false,
+        line: 0,
         icon: IconConfig {
             plain: "💰".to_string(),
             nerd_font: "\u{eec1}".to_string(),
@@ -101,6 +106,7 @@ pub fn session_segment() -> SegmentConfig {
     SegmentConfig {
         id: SegmentId::Session,
         enabled: false,
+        line: 0,
         icon: IconConfig {
             plain: "⏱️".to_string(),
             nerd_font: "\u{f19bb}".to_string(),
@@ -119,6 +125,7 @@ pub fn output_style_segment() -> SegmentConfig {
     SegmentConfig {
         id: SegmentId::OutputStyle,
         enabled: false,
+        line: 0,
         icon: IconConfig {
             plain: "🎯".to_string(),
             nerd_font: "\u{f12f5}".to_string(),
@@ -137,6 +144,7 @@ pub fn usage_segment() -> SegmentConfig {
     SegmentConfig {
         id: SegmentId::Usage,
         enabled: false,
+        line: 0,
         icon: IconConfig {
             plain: "📊".to_string(),
             nerd_font: "\u{f0a9e}".to_string(),

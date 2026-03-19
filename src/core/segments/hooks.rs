@@ -218,7 +218,7 @@ impl Segment for HooksSegment {
         }
         let mut event_vec: Vec<(String, u32)> = event_counts.into_iter().collect();
         event_vec.sort_by(|a, b| b.1.cmp(&a.1));
-        let secondary = event_vec.iter()
+        let stats = event_vec.iter()
             .map(|(event, count)| {
                 let short = match event.as_str() {
                     "PostToolUse" => "Post",
@@ -231,6 +231,7 @@ impl Segment for HooksSegment {
             })
             .collect::<Vec<_>>()
             .join("  ");
+        let secondary = format!("=> {}", stats);
 
         let mut metadata = HashMap::new();
         metadata.insert("running".to_string(), running.len().to_string());
