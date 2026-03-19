@@ -80,6 +80,8 @@ pub enum SegmentId {
     Todos,
     Environment,
     SessionName,
+    Skills,
+    Hooks,
 }
 
 // Legacy compatibility structure

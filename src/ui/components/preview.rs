@@ -223,6 +223,16 @@ impl PreviewComponent {
                     secondary: "".to_string(),
                     metadata: HashMap::new(),
                 },
+                SegmentId::Skills => SegmentData {
+                    primary: "".to_string(),
+                    secondary: "".to_string(),
+                    metadata: HashMap::new(),
+                },
+                SegmentId::Hooks => SegmentData {
+                    primary: "".to_string(),
+                    secondary: "".to_string(),
+                    metadata: HashMap::new(),
+                },
             };
 
             segments_data.push((segment_config.clone(), mock_data));

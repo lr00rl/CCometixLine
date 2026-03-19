@@ -511,6 +511,8 @@ impl App {
                         SegmentId::Todos => "Todos",
                         SegmentId::Environment => "Environment",
                         SegmentId::SessionName => "Session Name",
+                        SegmentId::Skills => "Skills",
+                        SegmentId::Hooks => "Hooks",
                     };
                     let is_enabled = segment.enabled;
                     self.status_message = Some(format!(
@@ -543,6 +545,8 @@ impl App {
                                 SegmentId::Todos => "Todos",
                                 SegmentId::Environment => "Environment",
                                 SegmentId::SessionName => "Session Name",
+                                SegmentId::Skills => "Skills",
+                                SegmentId::Hooks => "Hooks",
                             };
                             let is_enabled = segment.enabled;
                             self.status_message = Some(format!(

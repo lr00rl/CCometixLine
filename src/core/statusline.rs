@@ -1,33 +1,6 @@
 use crate::config::{AnsiColor, Config, SegmentConfig, StyleMode};
 use crate::core::segments::SegmentData;
 
-/// Strip ANSI escape sequences and return visible text length
-fn visible_width(text: &str) -> usize {
-    let mut visible = String::new();
-    let mut in_escape = false;
-    let mut chars = text.chars().peekable();
-
-    while let Some(ch) = chars.next() {
-        if ch == '\x1b' {
-            // Start of ANSI escape sequence
-            in_escape = true;
-            // Skip the [ character
-            if chars.peek() == Some(&'[') {
-                chars.next();
-            }
-        } else if in_escape {
-            // Skip until we find the end of the escape sequence (letter)
-            if ch.is_alphabetic() {
-                in_escape = false;
-            }
-        } else {
-            // Regular character
-            visible.push(ch);
-        }
-    }
-
-    visible.chars().count()
-}
 
 pub struct StatusLineGenerator {
     config: Config,
@@ -39,30 +12,46 @@ impl StatusLineGenerator {
     }
 
     pub fn generate(&self, segments: Vec<(SegmentConfig, SegmentData)>) -> String {
-        let mut output = Vec::new();
-        let enabled_segments: Vec<_> = segments
+        use std::collections::BTreeMap;
+
+        let enabled: Vec<_> = segments
             .into_iter()
             .filter(|(config, _)| config.enabled)
             .collect();
 
-        for (config, data) in enabled_segments.iter() {
-            let rendered = self.render_segment(config, data);
-            if !rendered.is_empty() {
-                output.push(rendered);
-            }
-        }
-
-        if output.is_empty() {
+        if enabled.is_empty() {
             return String::new();
         }
 
-        // Handle Powerline arrow separators with color transition
-        if self.config.style.separator == "\u{e0b0}" {
-            self.join_with_powerline_arrows(&output, &enabled_segments)
-        } else {
-            // For all other separators, use white color and simple join
-            self.join_with_white_separators(&output)
+        // Group by line number; BTreeMap preserves ascending order
+        let mut by_line: BTreeMap<u8, Vec<(SegmentConfig, SegmentData)>> = BTreeMap::new();
+        for item in enabled {
+            by_line.entry(item.0.line).or_default().push(item);
         }
+
+        let mut rendered_lines = Vec::new();
+        for (_line_num, line_segs) in by_line {
+            let mut output = Vec::new();
+            for (config, data) in &line_segs {
+                let rendered = self.render_segment(config, data);
+                if !rendered.is_empty() {
+                    output.push(rendered);
+                }
+            }
+            if output.is_empty() {
+                continue;
+            }
+            let line_str = if self.config.style.separator == "\u{e0b0}" {
+                self.join_with_powerline_arrows(&output, &line_segs)
+            } else {
+                self.join_with_white_separators(&output)
+            };
+            if !line_str.is_empty() {
+                rendered_lines.push(line_str);
+            }
+        }
+
+        rendered_lines.join("\n")
     }
 
     /// Generate statusline for TUI preview with proper width calculation
@@ -87,125 +76,60 @@ impl StatusLineGenerator {
         Line::from(vec![Span::raw(full_output)])
     }
 
-    /// Generate TUI-optimized text with intelligent wrapping by segment for preview
+    /// Generate TUI-optimized text grouped by explicit line assignments.
     pub fn generate_for_tui_preview(
         &self,
         segments: Vec<(SegmentConfig, SegmentData)>,
-        max_width: u16,
+        _max_width: u16,
     ) -> ratatui::text::Text<'_> {
         use ansi_to_tui::IntoText;
         use ratatui::text::{Line, Span, Text};
+        use std::collections::BTreeMap;
 
-        let enabled_segments: Vec<_> = segments
+        let enabled: Vec<_> = segments
             .into_iter()
             .filter(|(config, _)| config.enabled)
             .collect();
 
-        if enabled_segments.is_empty() {
+        if enabled.is_empty() {
             return Text::from(vec![Line::default()]);
         }
 
-        // Render each segment individually
-        let mut rendered_segments = Vec::new();
-        let mut segment_configs = Vec::new();
-
-        for (config, data) in &enabled_segments {
-            let rendered = self.render_segment(config, data);
-            if !rendered.is_empty() {
-                rendered_segments.push(rendered);
-                segment_configs.push(config.clone());
-            }
+        let mut by_line: BTreeMap<u8, Vec<(SegmentConfig, SegmentData)>> = BTreeMap::new();
+        for item in enabled {
+            by_line.entry(item.0.line).or_default().push(item);
         }
 
-        if rendered_segments.is_empty() {
-            return Text::from(vec![Line::default()]);
-        }
+        let mut tui_lines: Vec<Line<'static>> = Vec::new();
 
-        // Pre-calculate separators between segments
-        let mut separators = Vec::new();
-        for i in 0..rendered_segments.len().saturating_sub(1) {
-            let separator = if self.config.style.separator == "\u{e0b0}" {
-                // Powerline arrows with color transition
-                let prev_bg = segment_configs
-                    .get(i)
-                    .and_then(|config| config.colors.background.as_ref());
-                let curr_bg = segment_configs
-                    .get(i + 1)
-                    .and_then(|config| config.colors.background.as_ref());
-                self.create_powerline_arrow(prev_bg, curr_bg)
-            } else {
-                // Regular separators with white color
-                format!("\x1b[37m{}\x1b[0m", self.config.style.separator)
-            };
-            separators.push(separator);
-        }
-
-        // Intelligent line wrapping by segment
-        let mut lines: Vec<String> = Vec::new();
-        let mut current_line = String::new();
-        let mut current_width = 0usize;
-        let max_w = max_width as usize;
-
-        for i in 0..rendered_segments.len() {
-            let segment = &rendered_segments[i];
-            let segment_width = visible_width(segment);
-
-            // Check if adding this segment would exceed max_width
-            if current_width > 0 && current_width + segment_width > max_w {
-                // Current line would overflow, start a new line
-                lines.push(current_line.clone());
-                current_line.clear();
-                current_width = 0;
-            }
-
-            // Add the segment to current line
-            current_line.push_str(segment);
-            current_width += segment_width;
-
-            // Handle separator if not the last segment
-            if i < separators.len() {
-                let separator = &separators[i];
-                let separator_width = visible_width(separator);
-
-                // Check if next segment exists
-                if i + 1 < rendered_segments.len() {
-                    let next_segment = &rendered_segments[i + 1];
-                    let next_width = visible_width(next_segment);
-
-                    // Check if separator AND next segment both fit
-                    if current_width + separator_width + next_width <= max_w {
-                        // Both fit, add separator and continue on same line
-                        current_line.push_str(separator);
-                        current_width += separator_width;
-                    } else {
-                        // Separator and/or next segment don't fit
-                        // Don't add separator, just break line
-                        lines.push(current_line.clone());
-                        current_line.clear();
-                        current_width = 0;
-                    }
+        for (_line_num, line_segs) in by_line {
+            let mut output = Vec::new();
+            for (config, data) in &line_segs {
+                let rendered = self.render_segment(config, data);
+                if !rendered.is_empty() {
+                    output.push(rendered);
                 }
             }
-        }
-
-        // Add the last line if it's not empty
-        if !current_line.is_empty() {
-            lines.push(current_line);
-        }
-
-        // Convert string lines to ratatui Text
-        let mut tui_lines = Vec::new();
-        for line in lines {
-            if let Ok(text) = line.into_text() {
+            if output.is_empty() {
+                continue;
+            }
+            let line_str = if self.config.style.separator == "\u{e0b0}" {
+                self.join_with_powerline_arrows(&output, &line_segs)
+            } else {
+                self.join_with_white_separators(&output)
+            };
+            if line_str.is_empty() {
+                continue;
+            }
+            if let Ok(text) = line_str.into_text() {
                 for tui_line in text.lines {
                     tui_lines.push(tui_line);
                 }
             } else {
-                tui_lines.push(Line::from(vec![Span::raw(line)]));
+                tui_lines.push(Line::from(vec![Span::raw(line_str)]));
             }
         }
 
-        // Ensure we have at least one line
         if tui_lines.is_empty() {
             tui_lines.push(Line::default());
         }
@@ -534,6 +458,8 @@ pub fn collect_all_segments(
                 let segment = SessionNameSegment::new();
                 segment.collect(input)
             }
+            crate::config::SegmentId::Skills => None,
+            crate::config::SegmentId::Hooks => None,
         };
 
         if let Some(data) = segment_data {

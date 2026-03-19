@@ -41,6 +41,8 @@ impl SettingsComponent {
                 SegmentId::Todos => "Todos",
                 SegmentId::Environment => "Environment",
                 SegmentId::SessionName => "Session Name",
+                SegmentId::Skills => "Skills",
+                SegmentId::Hooks => "Hooks",
             };
             let current_icon = match config.style.mode {
                 StyleMode::Plain => &segment.icon.plain,

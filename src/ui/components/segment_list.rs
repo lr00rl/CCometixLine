@@ -62,6 +62,8 @@ impl SegmentListComponent {
                     SegmentId::Todos => "Todos",
                     SegmentId::Environment => "Environment",
                     SegmentId::SessionName => "Session Name",
+                    SegmentId::Skills => "Skills",
+                    SegmentId::Hooks => "Hooks",
                 };
 
                 if is_selected {
