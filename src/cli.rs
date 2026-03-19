@@ -15,6 +15,14 @@ pub struct Cli {
     /// Patch Claude Code cli.js to disable context warnings
     #[arg(long = "patch")]
     pub patch: Option<String>,
+
+    /// Log output path (file or directory)
+    #[arg(long = "logto")]
+    pub logto: Option<String>,
+
+    /// Log level: debug | info | error (default: info)
+    #[arg(long = "loglevel", default_value = "info")]
+    pub loglevel: String,
 }
 
 impl Cli {

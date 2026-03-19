@@ -482,7 +482,12 @@ pub fn collect_all_segments(
                     .get("show_sha")
                     .and_then(|v| v.as_bool())
                     .unwrap_or(false);
-                let segment = GitSegment::new().with_sha(show_sha);
+                let show_file_stats = segment_config
+                    .options
+                    .get("show_file_stats")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
+                let segment = GitSegment::new().with_sha(show_sha).with_file_stats(show_file_stats);
                 segment.collect(input)
             }
             crate::config::SegmentId::ContextWindow => {
@@ -507,6 +512,26 @@ pub fn collect_all_segments(
             }
             crate::config::SegmentId::Update => {
                 let segment = UpdateSegment::new();
+                segment.collect(input)
+            }
+            crate::config::SegmentId::Tools => {
+                let segment = ToolsSegment::new();
+                segment.collect(input)
+            }
+            crate::config::SegmentId::Agents => {
+                let segment = AgentsSegment::new();
+                segment.collect(input)
+            }
+            crate::config::SegmentId::Todos => {
+                let segment = TodosSegment::new();
+                segment.collect(input)
+            }
+            crate::config::SegmentId::Environment => {
+                let segment = EnvironmentSegment::new();
+                segment.collect(input)
+            }
+            crate::config::SegmentId::SessionName => {
+                let segment = SessionNameSegment::new();
                 segment.collect(input)
             }
         };

@@ -506,6 +506,11 @@ impl App {
                         SegmentId::Session => "Session",
                         SegmentId::OutputStyle => "Output Style",
                         SegmentId::Update => "Update",
+                        SegmentId::Tools => "Tools",
+                        SegmentId::Agents => "Agents",
+                        SegmentId::Todos => "Todos",
+                        SegmentId::Environment => "Environment",
+                        SegmentId::SessionName => "Session Name",
                     };
                     let is_enabled = segment.enabled;
                     self.status_message = Some(format!(
@@ -533,6 +538,11 @@ impl App {
                                 SegmentId::Session => "Session",
                                 SegmentId::OutputStyle => "Output Style",
                                 SegmentId::Update => "Update",
+                                SegmentId::Tools => "Tools",
+                                SegmentId::Agents => "Agents",
+                                SegmentId::Todos => "Todos",
+                                SegmentId::Environment => "Environment",
+                                SegmentId::SessionName => "Session Name",
                             };
                             let is_enabled = segment.enabled;
                             self.status_message = Some(format!(

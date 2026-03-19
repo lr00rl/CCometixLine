@@ -1,6 +1,10 @@
 // Theme presets for TUI configuration
 
-use crate::config::{Config, StyleConfig, StyleMode};
+use crate::config::{
+    AnsiColor, ColorConfig, Config, IconConfig, SegmentConfig, SegmentId, StyleConfig, StyleMode,
+    TextStyleConfig,
+};
+use std::collections::HashMap;
 
 // Import all theme modules
 use super::{
@@ -122,182 +126,282 @@ impl ThemePresets {
         ]
     }
 
+    /// Default disabled configs for new segments (Tools, Agents, Todos, Environment, SessionName)
+    /// These are appended to every theme so users can enable them via TUI config.
+    fn default_new_segments() -> Vec<SegmentConfig> {
+        vec![
+            SegmentConfig {
+                id: SegmentId::Tools,
+                enabled: false,
+                icon: IconConfig {
+                    plain: "⚙".to_string(),
+                    nerd_font: "\u{f013}".to_string(),
+                },
+                colors: ColorConfig {
+                    icon: Some(AnsiColor::Color16 { c16: 14 }),
+                    text: Some(AnsiColor::Color16 { c16: 14 }),
+                    background: None,
+                },
+                styles: TextStyleConfig::default(),
+                options: HashMap::new(),
+            },
+            SegmentConfig {
+                id: SegmentId::Agents,
+                enabled: false,
+                icon: IconConfig {
+                    plain: "◈".to_string(),
+                    nerd_font: "\u{f085}".to_string(),
+                },
+                colors: ColorConfig {
+                    icon: Some(AnsiColor::Color16 { c16: 12 }),
+                    text: Some(AnsiColor::Color16 { c16: 12 }),
+                    background: None,
+                },
+                styles: TextStyleConfig::default(),
+                options: HashMap::new(),
+            },
+            SegmentConfig {
+                id: SegmentId::Todos,
+                enabled: false,
+                icon: IconConfig {
+                    plain: "▸".to_string(),
+                    nerd_font: "\u{f0ae}".to_string(),
+                },
+                colors: ColorConfig {
+                    icon: Some(AnsiColor::Color16 { c16: 10 }),
+                    text: Some(AnsiColor::Color16 { c16: 10 }),
+                    background: None,
+                },
+                styles: TextStyleConfig::default(),
+                options: HashMap::new(),
+            },
+            SegmentConfig {
+                id: SegmentId::Environment,
+                enabled: false,
+                icon: IconConfig {
+                    plain: "⊞".to_string(),
+                    nerd_font: "\u{f489}".to_string(),
+                },
+                colors: ColorConfig {
+                    icon: Some(AnsiColor::Color16 { c16: 3 }),
+                    text: Some(AnsiColor::Color16 { c16: 3 }),
+                    background: None,
+                },
+                styles: TextStyleConfig::default(),
+                options: HashMap::new(),
+            },
+            SegmentConfig {
+                id: SegmentId::SessionName,
+                enabled: false,
+                icon: IconConfig {
+                    plain: "◆".to_string(),
+                    nerd_font: "\u{f040}".to_string(),
+                },
+                colors: ColorConfig {
+                    icon: Some(AnsiColor::Color16 { c16: 13 }),
+                    text: Some(AnsiColor::Color16 { c16: 13 }),
+                    background: None,
+                },
+                styles: TextStyleConfig::default(),
+                options: HashMap::new(),
+            },
+        ]
+    }
+
     pub fn get_cometix() -> Config {
+        let mut segments = vec![
+            theme_cometix::model_segment(),
+            theme_cometix::directory_segment(),
+            theme_cometix::git_segment(),
+            theme_cometix::context_window_segment(),
+            theme_cometix::usage_segment(),
+            theme_cometix::cost_segment(),
+            theme_cometix::session_segment(),
+            theme_cometix::output_style_segment(),
+        ];
+        segments.extend(Self::default_new_segments());
         Config {
             style: StyleConfig {
                 mode: StyleMode::NerdFont,
                 separator: " | ".to_string(),
             },
-            segments: vec![
-                theme_cometix::model_segment(),
-                theme_cometix::directory_segment(),
-                theme_cometix::git_segment(),
-                theme_cometix::context_window_segment(),
-                theme_cometix::usage_segment(),
-                theme_cometix::cost_segment(),
-                theme_cometix::session_segment(),
-                theme_cometix::output_style_segment(),
-            ],
+            segments,
             theme: "cometix".to_string(),
         }
     }
 
     pub fn get_default() -> Config {
+        let mut segments = vec![
+            theme_default::model_segment(),
+            theme_default::directory_segment(),
+            theme_default::git_segment(),
+            theme_default::context_window_segment(),
+            theme_default::usage_segment(),
+            theme_default::cost_segment(),
+            theme_default::session_segment(),
+            theme_default::output_style_segment(),
+        ];
+        segments.extend(Self::default_new_segments());
         Config {
             style: StyleConfig {
                 mode: StyleMode::Plain,
                 separator: " | ".to_string(),
             },
-            segments: vec![
-                theme_default::model_segment(),
-                theme_default::directory_segment(),
-                theme_default::git_segment(),
-                theme_default::context_window_segment(),
-                theme_default::usage_segment(),
-                theme_default::cost_segment(),
-                theme_default::session_segment(),
-                theme_default::output_style_segment(),
-            ],
+            segments,
             theme: "default".to_string(),
         }
     }
 
     pub fn get_minimal() -> Config {
+        let mut segments = vec![
+            theme_minimal::model_segment(),
+            theme_minimal::directory_segment(),
+            theme_minimal::git_segment(),
+            theme_minimal::context_window_segment(),
+            theme_minimal::usage_segment(),
+            theme_minimal::cost_segment(),
+            theme_minimal::session_segment(),
+            theme_minimal::output_style_segment(),
+        ];
+        segments.extend(Self::default_new_segments());
         Config {
             style: StyleConfig {
                 mode: StyleMode::Plain,
                 separator: " │ ".to_string(),
             },
-            segments: vec![
-                theme_minimal::model_segment(),
-                theme_minimal::directory_segment(),
-                theme_minimal::git_segment(),
-                theme_minimal::context_window_segment(),
-                theme_minimal::usage_segment(),
-                theme_minimal::cost_segment(),
-                theme_minimal::session_segment(),
-                theme_minimal::output_style_segment(),
-            ],
+            segments,
             theme: "minimal".to_string(),
         }
     }
 
     pub fn get_gruvbox() -> Config {
+        let mut segments = vec![
+            theme_gruvbox::model_segment(),
+            theme_gruvbox::directory_segment(),
+            theme_gruvbox::git_segment(),
+            theme_gruvbox::context_window_segment(),
+            theme_gruvbox::usage_segment(),
+            theme_gruvbox::cost_segment(),
+            theme_gruvbox::session_segment(),
+            theme_gruvbox::output_style_segment(),
+        ];
+        segments.extend(Self::default_new_segments());
         Config {
             style: StyleConfig {
                 mode: StyleMode::NerdFont,
                 separator: " | ".to_string(),
             },
-            segments: vec![
-                theme_gruvbox::model_segment(),
-                theme_gruvbox::directory_segment(),
-                theme_gruvbox::git_segment(),
-                theme_gruvbox::context_window_segment(),
-                theme_gruvbox::usage_segment(),
-                theme_gruvbox::cost_segment(),
-                theme_gruvbox::session_segment(),
-                theme_gruvbox::output_style_segment(),
-            ],
+            segments,
             theme: "gruvbox".to_string(),
         }
     }
 
     pub fn get_nord() -> Config {
+        let mut segments = vec![
+            theme_nord::model_segment(),
+            theme_nord::directory_segment(),
+            theme_nord::git_segment(),
+            theme_nord::context_window_segment(),
+            theme_nord::usage_segment(),
+            theme_nord::cost_segment(),
+            theme_nord::session_segment(),
+            theme_nord::output_style_segment(),
+        ];
+        segments.extend(Self::default_new_segments());
         Config {
             style: StyleConfig {
                 mode: StyleMode::NerdFont,
                 separator: "".to_string(),
             },
-            segments: vec![
-                theme_nord::model_segment(),
-                theme_nord::directory_segment(),
-                theme_nord::git_segment(),
-                theme_nord::context_window_segment(),
-                theme_nord::usage_segment(),
-                theme_nord::cost_segment(),
-                theme_nord::session_segment(),
-                theme_nord::output_style_segment(),
-            ],
+            segments,
             theme: "nord".to_string(),
         }
     }
 
     pub fn get_powerline_dark() -> Config {
+        let mut segments = vec![
+            theme_powerline_dark::model_segment(),
+            theme_powerline_dark::directory_segment(),
+            theme_powerline_dark::git_segment(),
+            theme_powerline_dark::context_window_segment(),
+            theme_powerline_dark::usage_segment(),
+            theme_powerline_dark::cost_segment(),
+            theme_powerline_dark::session_segment(),
+            theme_powerline_dark::output_style_segment(),
+        ];
+        segments.extend(Self::default_new_segments());
         Config {
             style: StyleConfig {
                 mode: StyleMode::NerdFont,
                 separator: "".to_string(),
             },
-            segments: vec![
-                theme_powerline_dark::model_segment(),
-                theme_powerline_dark::directory_segment(),
-                theme_powerline_dark::git_segment(),
-                theme_powerline_dark::context_window_segment(),
-                theme_powerline_dark::usage_segment(),
-                theme_powerline_dark::cost_segment(),
-                theme_powerline_dark::session_segment(),
-                theme_powerline_dark::output_style_segment(),
-            ],
+            segments,
             theme: "powerline-dark".to_string(),
         }
     }
 
     pub fn get_powerline_light() -> Config {
+        let mut segments = vec![
+            theme_powerline_light::model_segment(),
+            theme_powerline_light::directory_segment(),
+            theme_powerline_light::git_segment(),
+            theme_powerline_light::context_window_segment(),
+            theme_powerline_light::usage_segment(),
+            theme_powerline_light::cost_segment(),
+            theme_powerline_light::session_segment(),
+            theme_powerline_light::output_style_segment(),
+        ];
+        segments.extend(Self::default_new_segments());
         Config {
             style: StyleConfig {
                 mode: StyleMode::NerdFont,
                 separator: "".to_string(),
             },
-            segments: vec![
-                theme_powerline_light::model_segment(),
-                theme_powerline_light::directory_segment(),
-                theme_powerline_light::git_segment(),
-                theme_powerline_light::context_window_segment(),
-                theme_powerline_light::usage_segment(),
-                theme_powerline_light::cost_segment(),
-                theme_powerline_light::session_segment(),
-                theme_powerline_light::output_style_segment(),
-            ],
+            segments,
             theme: "powerline-light".to_string(),
         }
     }
 
     pub fn get_powerline_rose_pine() -> Config {
+        let mut segments = vec![
+            theme_powerline_rose_pine::model_segment(),
+            theme_powerline_rose_pine::directory_segment(),
+            theme_powerline_rose_pine::git_segment(),
+            theme_powerline_rose_pine::context_window_segment(),
+            theme_powerline_rose_pine::usage_segment(),
+            theme_powerline_rose_pine::cost_segment(),
+            theme_powerline_rose_pine::session_segment(),
+            theme_powerline_rose_pine::output_style_segment(),
+        ];
+        segments.extend(Self::default_new_segments());
         Config {
             style: StyleConfig {
                 mode: StyleMode::NerdFont,
                 separator: "".to_string(),
             },
-            segments: vec![
-                theme_powerline_rose_pine::model_segment(),
-                theme_powerline_rose_pine::directory_segment(),
-                theme_powerline_rose_pine::git_segment(),
-                theme_powerline_rose_pine::context_window_segment(),
-                theme_powerline_rose_pine::usage_segment(),
-                theme_powerline_rose_pine::cost_segment(),
-                theme_powerline_rose_pine::session_segment(),
-                theme_powerline_rose_pine::output_style_segment(),
-            ],
+            segments,
             theme: "powerline-rose-pine".to_string(),
         }
     }
 
     pub fn get_powerline_tokyo_night() -> Config {
+        let mut segments = vec![
+            theme_powerline_tokyo_night::model_segment(),
+            theme_powerline_tokyo_night::directory_segment(),
+            theme_powerline_tokyo_night::git_segment(),
+            theme_powerline_tokyo_night::context_window_segment(),
+            theme_powerline_tokyo_night::usage_segment(),
+            theme_powerline_tokyo_night::cost_segment(),
+            theme_powerline_tokyo_night::session_segment(),
+            theme_powerline_tokyo_night::output_style_segment(),
+        ];
+        segments.extend(Self::default_new_segments());
         Config {
             style: StyleConfig {
                 mode: StyleMode::NerdFont,
                 separator: "".to_string(),
             },
-            segments: vec![
-                theme_powerline_tokyo_night::model_segment(),
-                theme_powerline_tokyo_night::directory_segment(),
-                theme_powerline_tokyo_night::git_segment(),
-                theme_powerline_tokyo_night::context_window_segment(),
-                theme_powerline_tokyo_night::usage_segment(),
-                theme_powerline_tokyo_night::cost_segment(),
-                theme_powerline_tokyo_night::session_segment(),
-                theme_powerline_tokyo_night::output_style_segment(),
-            ],
+            segments,
             theme: "powerline-tokyo-night".to_string(),
         }
     }

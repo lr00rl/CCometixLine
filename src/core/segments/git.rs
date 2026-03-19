@@ -4,12 +4,21 @@ use std::collections::HashMap;
 use std::process::Command;
 
 #[derive(Debug)]
+pub struct GitFileStats {
+    pub modified: u32,
+    pub added: u32,
+    pub deleted: u32,
+    pub untracked: u32,
+}
+
+#[derive(Debug)]
 pub struct GitInfo {
     pub branch: String,
     pub status: GitStatus,
     pub ahead: u32,
     pub behind: u32,
     pub sha: Option<String>,
+    pub file_stats: Option<GitFileStats>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -21,6 +30,7 @@ pub enum GitStatus {
 
 pub struct GitSegment {
     show_sha: bool,
+    show_file_stats: bool,
 }
 
 impl Default for GitSegment {
@@ -31,11 +41,16 @@ impl Default for GitSegment {
 
 impl GitSegment {
     pub fn new() -> Self {
-        Self { show_sha: false }
+        Self { show_sha: false, show_file_stats: false }
     }
 
     pub fn with_sha(mut self, show_sha: bool) -> Self {
         self.show_sha = show_sha;
+        self
+    }
+
+    pub fn with_file_stats(mut self, show_file_stats: bool) -> Self {
+        self.show_file_stats = show_file_stats;
         self
     }
 
@@ -47,7 +62,7 @@ impl GitSegment {
         let branch = self
             .get_branch(working_dir)
             .unwrap_or_else(|| "detached".to_string());
-        let status = self.get_status(working_dir);
+        let (status, file_stats_opt) = self.get_status_and_stats(working_dir);
         let (ahead, behind) = self.get_ahead_behind(working_dir);
         let sha = if self.show_sha {
             self.get_sha(working_dir)
@@ -55,12 +70,15 @@ impl GitSegment {
             None
         };
 
+        let file_stats = if self.show_file_stats { file_stats_opt } else { None };
+
         Some(GitInfo {
             branch,
             status,
             ahead,
             behind,
             sha,
+            file_stats,
         })
     }
 
@@ -103,7 +121,7 @@ impl GitSegment {
         None
     }
 
-    fn get_status(&self, working_dir: &str) -> GitStatus {
+    fn get_status_and_stats(&self, working_dir: &str) -> (GitStatus, Option<GitFileStats>) {
         let output = Command::new("git")
             .args(["--no-optional-locks", "status", "--porcelain"])
             .current_dir(working_dir)
@@ -114,19 +132,46 @@ impl GitSegment {
                 let status_text = String::from_utf8(output.stdout).unwrap_or_default();
 
                 if status_text.trim().is_empty() {
-                    return GitStatus::Clean;
+                    return (GitStatus::Clean, Some(GitFileStats { modified: 0, added: 0, deleted: 0, untracked: 0 }));
                 }
 
-                if status_text.contains("UU")
+                let git_status = if status_text.contains("UU")
                     || status_text.contains("AA")
                     || status_text.contains("DD")
                 {
                     GitStatus::Conflicts
                 } else {
                     GitStatus::Dirty
+                };
+
+                let mut modified = 0u32;
+                let mut added = 0u32;
+                let mut deleted = 0u32;
+                let mut untracked = 0u32;
+
+                for line in status_text.lines() {
+                    if line.len() < 2 {
+                        continue;
+                    }
+                    let xy: &str = &line[..2];
+                    match xy {
+                        "??" => untracked += 1,
+                        " D" | "D " | "DD" => deleted += 1,
+                        " A" | "A " | "AA" | "AM" => added += 1,
+                        " M" | "M " | "MM" | "RM" | "CM" => modified += 1,
+                        _ => {
+                            // Treat any other non-clean status as modified
+                            if !xy.trim().is_empty() {
+                                modified += 1;
+                            }
+                        }
+                    }
                 }
+
+                let stats = GitFileStats { modified, added, deleted, untracked };
+                (git_status, Some(stats))
             }
-            _ => GitStatus::Clean,
+            _ => (GitStatus::Clean, None),
         }
     }
 
@@ -203,6 +248,22 @@ impl Segment for GitSegment {
 
         if let Some(ref sha) = git_info.sha {
             status_parts.push(sha.clone());
+        }
+
+        // Append file stats if enabled
+        if let Some(ref stats) = git_info.file_stats {
+            if stats.modified > 0 {
+                status_parts.push(format!("!{}", stats.modified));
+            }
+            if stats.added > 0 {
+                status_parts.push(format!("+{}", stats.added));
+            }
+            if stats.deleted > 0 {
+                status_parts.push(format!("✘{}", stats.deleted));
+            }
+            if stats.untracked > 0 {
+                status_parts.push(format!("?{}", stats.untracked));
+            }
         }
 
         Some(SegmentData {

@@ -7,6 +7,14 @@ use std::io::{self, IsTerminal};
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse_args();
 
+    // Initialize file logger if --logto is specified
+    if let Some(ref logto) = cli.logto {
+        if let Err(e) = ccometixline::utils::logger::FileLogger::init(logto, &cli.loglevel) {
+            // Can't write to stderr (would corrupt statusline output), silently ignore
+            let _ = e;
+        }
+    }
+
     if cli.config {
         ccometixline::ui::run_configurator()?;
         return Ok(());

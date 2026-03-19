@@ -27,14 +27,14 @@ impl Segment for ContextWindowSegment {
 
         let context_used_token_opt = parse_transcript_usage(&input.transcript_path);
 
-        let (percentage_display, tokens_display) = match context_used_token_opt {
+        let (percentage_display, tokens_display, context_used_rate) = match context_used_token_opt {
             Some(context_used_token) => {
-                let context_used_rate = (context_used_token as f64 / context_limit as f64) * 100.0;
+                let rate = (context_used_token as f64 / context_limit as f64) * 100.0;
 
-                let percentage = if context_used_rate.fract() == 0.0 {
-                    format!("{:.0}%", context_used_rate)
+                let percentage = if rate.fract() == 0.0 {
+                    format!("{:.0}%", rate)
                 } else {
-                    format!("{:.1}%", context_used_rate)
+                    format!("{:.1}%", rate)
                 };
 
                 let tokens = if context_used_token >= 1000 {
@@ -48,20 +48,20 @@ impl Segment for ContextWindowSegment {
                     context_used_token.to_string()
                 };
 
-                (percentage, tokens)
+                (percentage, tokens, rate)
             }
             None => {
                 // No usage data available
-                ("-".to_string(), "-".to_string())
+                ("-".to_string(), "-".to_string(), 0.0)
             }
         };
 
         let mut metadata = HashMap::new();
         match context_used_token_opt {
             Some(context_used_token) => {
-                let context_used_rate = (context_used_token as f64 / context_limit as f64) * 100.0;
+                let rate = (context_used_token as f64 / context_limit as f64) * 100.0;
                 metadata.insert("tokens".to_string(), context_used_token.to_string());
-                metadata.insert("percentage".to_string(), context_used_rate.to_string());
+                metadata.insert("percentage".to_string(), rate.to_string());
             }
             None => {
                 metadata.insert("tokens".to_string(), "-".to_string());
@@ -71,9 +71,27 @@ impl Segment for ContextWindowSegment {
         metadata.insert("limit".to_string(), context_limit.to_string());
         metadata.insert("model".to_string(), input.model.id.clone());
 
+        // Show token breakdown when usage > 85%
+        let secondary = if context_used_rate >= 85.0 {
+            parse_token_breakdown(&input.transcript_path)
+                .map(|(input_t, cache_t)| {
+                    let fmt_k = |t: u32| {
+                        if t >= 1000 {
+                            format!("{:.1}k", t as f64 / 1000.0)
+                        } else {
+                            t.to_string()
+                        }
+                    };
+                    format!("in: {}, cache: {}", fmt_k(input_t), fmt_k(cache_t))
+                })
+                .unwrap_or_default()
+        } else {
+            String::new()
+        };
+
         Some(SegmentData {
             primary: format!("{} · {} tokens", percentage_display, tokens_display),
-            secondary: String::new(),
+            secondary,
             metadata,
         })
     }
@@ -265,6 +283,36 @@ fn try_find_usage_from_project_history(transcript_path: &Path) -> Option<u32> {
     for session_path in &session_files {
         if let Some(usage) = try_parse_transcript_file(session_path) {
             return Some(usage);
+        }
+    }
+
+    None
+}
+
+/// Parse the last assistant message and return (input_tokens, cache_read_tokens)
+fn parse_token_breakdown<P: AsRef<Path>>(transcript_path: P) -> Option<(u32, u32)> {
+    let path = transcript_path.as_ref();
+    let file = fs::File::open(path).ok()?;
+    let reader = BufReader::new(file);
+    let lines: Vec<String> = reader
+        .lines()
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap_or_default();
+
+    for line in lines.iter().rev() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        if let Ok(entry) = serde_json::from_str::<TranscriptEntry>(line) {
+            if entry.r#type.as_deref() == Some("assistant") {
+                if let Some(message) = &entry.message {
+                    if let Some(raw_usage) = &message.usage {
+                        let normalized = raw_usage.clone().normalize();
+                        return Some((normalized.input_tokens, normalized.cache_read_input_tokens));
+                    }
+                }
+            }
         }
     }
 

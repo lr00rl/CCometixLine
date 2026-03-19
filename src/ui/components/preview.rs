@@ -183,6 +183,46 @@ impl PreviewComponent {
                         map
                     },
                 },
+                SegmentId::Tools => SegmentData {
+                    primary: "◐ Edit · auth.rs  ✓ Read ×3".to_string(),
+                    secondary: "".to_string(),
+                    metadata: {
+                        let mut map = HashMap::new();
+                        map.insert("running".to_string(), "1".to_string());
+                        map.insert("completed".to_string(), "3".to_string());
+                        map
+                    },
+                },
+                SegmentId::Agents => SegmentData {
+                    primary: "◐ code-reviewer [sonnet] · Fix auth".to_string(),
+                    secondary: "".to_string(),
+                    metadata: {
+                        let mut map = HashMap::new();
+                        map.insert("running".to_string(), "1".to_string());
+                        map.insert("completed".to_string(), "0".to_string());
+                        map
+                    },
+                },
+                SegmentId::Todos => SegmentData {
+                    primary: "▸ Fix auth bug (2/5)".to_string(),
+                    secondary: "".to_string(),
+                    metadata: {
+                        let mut map = HashMap::new();
+                        map.insert("total".to_string(), "5".to_string());
+                        map.insert("completed".to_string(), "2".to_string());
+                        map
+                    },
+                },
+                SegmentId::Environment => SegmentData {
+                    primary: "2 CLAUDE.md · 5 rules · 8 MCPs · 4 hooks".to_string(),
+                    secondary: "".to_string(),
+                    metadata: HashMap::new(),
+                },
+                SegmentId::SessionName => SegmentData {
+                    primary: "My Work Session".to_string(),
+                    secondary: "".to_string(),
+                    metadata: HashMap::new(),
+                },
             };
 
             segments_data.push((segment_config.clone(), mock_data));

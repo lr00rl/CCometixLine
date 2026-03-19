@@ -73,6 +73,11 @@ pub enum SegmentId {
     Session,
     OutputStyle,
     Update,
+    Tools,
+    Agents,
+    Todos,
+    Environment,
+    SessionName,
 }
 
 // Legacy compatibility structure
@@ -398,9 +403,23 @@ impl RawUsage {
 // Legacy alias for backward compatibility
 pub type Usage = RawUsage;
 
+/// A single content block within a message (tool_use, tool_result, text, etc.)
+#[derive(Debug, Clone, Deserialize)]
+pub struct ContentBlock {
+    pub r#type: String,
+    pub id: Option<String>,
+    #[serde(rename = "tool_use_id")]
+    pub tool_use_id: Option<String>,
+    pub name: Option<String>,
+    pub input: Option<serde_json::Value>,
+    pub content: Option<serde_json::Value>, // tool_result content (string or array)
+}
+
 #[derive(Deserialize)]
 pub struct Message {
     pub usage: Option<Usage>,
+    pub content: Option<Vec<ContentBlock>>,
+    pub role: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -413,4 +432,5 @@ pub struct TranscriptEntry {
     #[serde(rename = "parentUuid")]
     pub parent_uuid: Option<String>,
     pub summary: Option<String>,
+    pub title: Option<String>,
 }
