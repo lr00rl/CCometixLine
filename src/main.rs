@@ -12,6 +12,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Err(e) = ccometixline::utils::logger::FileLogger::init(logto, &cli.loglevel) {
             // Can't write to stderr (would corrupt statusline output), silently ignore
             let _ = e;
+        } else {
+            ccometixline::log_info!("ccline started, loglevel={}", cli.loglevel);
         }
     }
 
@@ -74,6 +76,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Collect segment data
     let segments_data = collect_all_segments(&config, &input);
+    ccometixline::log_debug!("collected {} segments", segments_data.len());
 
     // Render statusline
     let generator = StatusLineGenerator::new(config);

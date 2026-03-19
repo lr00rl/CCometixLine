@@ -1,7 +1,7 @@
 use super::{Segment, SegmentData};
 use crate::config::{InputData, SegmentId};
 use crate::utils::credentials;
-use chrono::{DateTime, Datelike, Duration, Local, Timelike, Utc};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -33,6 +33,37 @@ impl UsageSegment {
         Self
     }
 
+    fn progress_bar(pct: f64, width: usize) -> String {
+        let clamped = pct.clamp(0.0, 100.0);
+        let filled = ((clamped / 100.0) * width as f64).round() as usize;
+        let empty = width.saturating_sub(filled);
+        format!("{}{}", "█".repeat(filled), "░".repeat(empty))
+    }
+
+    /// Format elapsed time from utilization for 5-hour period → "1h 15m"
+    fn format_5h_elapsed(util_pct: f64) -> String {
+        let elapsed_mins = (util_pct / 100.0 * 300.0).round() as u64;
+        let h = elapsed_mins / 60;
+        let m = elapsed_mins % 60;
+        if h > 0 {
+            format!("{}h {}m", h, m)
+        } else {
+            format!("{}m", m)
+        }
+    }
+
+    /// Format elapsed time from utilization for 7-day period → "1d 22h"
+    fn format_7d_elapsed(util_pct: f64) -> String {
+        let elapsed_hours = (util_pct / 100.0 * 168.0).round() as u64;
+        let d = elapsed_hours / 24;
+        let h = elapsed_hours % 24;
+        if d > 0 {
+            format!("{}d {}h", d, h)
+        } else {
+            format!("{}h", h)
+        }
+    }
+
     fn get_circle_icon(utilization: f64) -> String {
         let percent = (utilization * 100.0) as u8;
         match percent {
@@ -45,24 +76,6 @@ impl UsageSegment {
             76..=87 => "\u{f0aa4}".to_string(), // circle_slice_7
             _ => "\u{f0aa5}".to_string(),       // circle_slice_8
         }
-    }
-
-    fn format_reset_time(reset_time_str: Option<&str>) -> String {
-        if let Some(time_str) = reset_time_str {
-            if let Ok(dt) = DateTime::parse_from_rfc3339(time_str) {
-                let mut local_dt = dt.with_timezone(&Local);
-                if local_dt.minute() > 45 {
-                    local_dt += Duration::hours(1);
-                }
-                return format!(
-                    "{}-{}-{}",
-                    local_dt.month(),
-                    local_dt.day(),
-                    local_dt.hour()
-                );
-            }
-        }
-        "?".to_string()
     }
 
     fn get_cache_path() -> Option<std::path::PathBuf> {
@@ -210,6 +223,7 @@ impl Segment for UsageSegment {
             .unwrap_or(false);
 
         let (five_hour_util, seven_day_util, resets_at) = if use_cached {
+            crate::log_debug!("usage: using cached data");
             let cache = cached_data.unwrap();
             (
                 cache.five_hour_utilization,
@@ -217,8 +231,14 @@ impl Segment for UsageSegment {
                 cache.resets_at,
             )
         } else {
+            crate::log_debug!("usage: fetching from API ({})", api_base_url);
             match self.fetch_api_usage(api_base_url, &token, timeout) {
                 Some(response) => {
+                    crate::log_debug!(
+                        "usage: API ok 5h={} 7d={}",
+                        response.five_hour.utilization,
+                        response.seven_day.utilization
+                    );
                     let cache = ApiUsageCache {
                         five_hour_utilization: response.five_hour.utilization,
                         seven_day_utilization: response.seven_day.utilization,
@@ -233,6 +253,7 @@ impl Segment for UsageSegment {
                     )
                 }
                 None => {
+                    crate::log_debug!("usage: API failed, falling back to stale cache");
                     if let Some(cache) = cached_data {
                         (
                             cache.five_hour_utilization,
@@ -240,6 +261,7 @@ impl Segment for UsageSegment {
                             cache.resets_at,
                         )
                     } else {
+                        crate::log_debug!("usage: no cache, returning None");
                         return None;
                     }
                 }
@@ -248,8 +270,24 @@ impl Segment for UsageSegment {
 
         let dynamic_icon = Self::get_circle_icon(seven_day_util / 100.0);
         let five_hour_percent = five_hour_util.round() as u8;
-        let primary = format!("{}%", five_hour_percent);
-        let secondary = format!("· {}", Self::format_reset_time(resets_at.as_deref()));
+        let seven_day_percent = seven_day_util.round() as u8;
+
+        let bar5h = Self::progress_bar(five_hour_util, 10);
+        let bar7d = Self::progress_bar(seven_day_util, 10);
+        let elapsed5h = Self::format_5h_elapsed(five_hour_util);
+        let elapsed7d = Self::format_7d_elapsed(seven_day_util);
+
+        let primary = format!(
+            "{} {}% ({} / 5h) | {} {}% ({} / 7d)",
+            bar5h, five_hour_percent, elapsed5h,
+            bar7d, seven_day_percent, elapsed7d
+        );
+        let secondary = String::new();
+
+        crate::log_debug!(
+            "usage: 5h={:.1}% 7d={:.1}% resets_at={:?}",
+            five_hour_util, seven_day_util, resets_at
+        );
 
         let mut metadata = HashMap::new();
         metadata.insert("dynamic_icon".to_string(), dynamic_icon);

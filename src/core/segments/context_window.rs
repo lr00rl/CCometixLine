@@ -5,6 +5,13 @@ use std::fs;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 
+fn progress_bar(pct: f64, width: usize) -> String {
+    let clamped = pct.clamp(0.0, 100.0);
+    let filled = ((clamped / 100.0) * width as f64).round() as usize;
+    let empty = width.saturating_sub(filled);
+    format!("{}{}", "█".repeat(filled), "░".repeat(empty))
+}
+
 #[derive(Default)]
 pub struct ContextWindowSegment;
 
@@ -52,6 +59,7 @@ impl Segment for ContextWindowSegment {
             }
             None => {
                 // No usage data available
+                crate::log_debug!("context_window: no usage data found in transcript");
                 ("-".to_string(), "-".to_string(), 0.0)
             }
         };
@@ -89,8 +97,19 @@ impl Segment for ContextWindowSegment {
             String::new()
         };
 
+        let bar = if context_used_rate > 0.0 {
+            progress_bar(context_used_rate, 10)
+        } else {
+            "░".repeat(10)
+        };
+        let primary = format!("{} {}", bar, percentage_display);
+        crate::log_debug!(
+            "context_window: rate={:.1}% tokens={} limit={}",
+            context_used_rate, tokens_display, context_limit
+        );
+
         Some(SegmentData {
-            primary: format!("{} · {} tokens", percentage_display, tokens_display),
+            primary,
             secondary,
             metadata,
         })
