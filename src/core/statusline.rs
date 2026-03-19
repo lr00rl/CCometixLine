@@ -458,7 +458,10 @@ pub fn collect_all_segments(
                 let segment = SessionNameSegment::new();
                 segment.collect(input)
             }
-            crate::config::SegmentId::Skills => None,
+            crate::config::SegmentId::Skills => {
+                let segment = SkillsSegment::new();
+                segment.collect(input)
+            }
             crate::config::SegmentId::Hooks => None,
         };
 
