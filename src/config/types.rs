@@ -29,6 +29,8 @@ pub enum StyleMode {
 pub struct SegmentConfig {
     pub id: SegmentId,
     pub enabled: bool,
+    #[serde(default)]
+    pub line: u8,
     pub icon: IconConfig,
     pub colors: ColorConfig,
     pub styles: TextStyleConfig,
@@ -415,6 +417,15 @@ pub struct ContentBlock {
     pub content: Option<serde_json::Value>, // tool_result content (string or array)
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct HookProgressData {
+    #[serde(rename = "hookEvent")]
+    pub hook_event: Option<String>,
+    #[serde(rename = "hookName")]
+    pub hook_name: Option<String>,
+    pub command: Option<String>,
+}
+
 #[derive(Deserialize)]
 pub struct Message {
     pub usage: Option<Usage>,
@@ -433,4 +444,6 @@ pub struct TranscriptEntry {
     pub parent_uuid: Option<String>,
     pub summary: Option<String>,
     pub title: Option<String>,
+    pub timestamp: Option<String>,
+    pub data: Option<HookProgressData>,
 }
