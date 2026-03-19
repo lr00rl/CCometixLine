@@ -220,12 +220,14 @@ impl Segment for HooksSegment {
         event_vec.sort_by(|a, b| b.1.cmp(&a.1));
         let secondary = event_vec.iter()
             .map(|(event, count)| {
-                let short = if event.len() > 10 {
-                    format!("{}×{}", &event[..4], count)
-                } else {
-                    format!("{}×{}", event, count)
+                let short = match event.as_str() {
+                    "PostToolUse" => "Post",
+                    "PreToolUse"  => "Pre",
+                    "SessionStart" => "Start",
+                    "Stop"        => "Stop",
+                    other         => other,
                 };
-                short
+                format!("{}×{}", short, count)
             })
             .collect::<Vec<_>>()
             .join("  ");

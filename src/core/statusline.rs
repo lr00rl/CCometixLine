@@ -469,6 +469,12 @@ pub fn collect_all_segments(
         };
 
         if let Some(data) = segment_data {
+            crate::log_debug!(
+                "segment {:?}: primary={:?} secondary={:?}",
+                segment_config.id,
+                data.primary,
+                data.secondary
+            );
             results.push((segment_config.clone(), data));
         }
     }

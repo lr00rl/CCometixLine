@@ -213,7 +213,7 @@ impl ThemePresets {
             SegmentConfig {
                 id: SegmentId::Skills,
                 enabled: false,
-                line: 0,
+                line: 4,
                 icon: IconConfig {
                     plain: "📚".to_string(),
                     nerd_font: "\u{f0278}".to_string(),
@@ -229,7 +229,7 @@ impl ThemePresets {
             SegmentConfig {
                 id: SegmentId::Hooks,
                 enabled: false,
-                line: 0,
+                line: 5,
                 icon: IconConfig {
                     plain: "⚙".to_string(),
                     nerd_font: "\u{eb01}".to_string(),
