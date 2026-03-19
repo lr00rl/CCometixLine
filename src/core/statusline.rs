@@ -462,7 +462,10 @@ pub fn collect_all_segments(
                 let segment = SkillsSegment::new();
                 segment.collect(input)
             }
-            crate::config::SegmentId::Hooks => None,
+            crate::config::SegmentId::Hooks => {
+                let segment = HooksSegment::new();
+                segment.collect(input)
+            }
         };
 
         if let Some(data) = segment_data {
