@@ -72,7 +72,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Read Claude Code data from stdin
     let stdin = io::stdin();
-    let input: InputData = serde_json::from_reader(stdin.lock())?;
+    let raw = {
+        use std::io::Read;
+        let mut buf = String::new();
+        stdin.lock().read_to_string(&mut buf)?;
+        buf
+    };
+    ccometixline::log_debug!("raw stdin: {}", raw);
+    let input: InputData = serde_json::from_str(&raw)?;
 
     // Collect segment data
     let segments_data = collect_all_segments(&config, &input);

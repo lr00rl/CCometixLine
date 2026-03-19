@@ -216,9 +216,8 @@ impl Segment for ToolsSegment {
         let completed: Vec<&ToolRecord> = tools.iter().filter(|t| t.completed).collect();
 
         let primary = if show_args {
-            // Detail mode: show recent tools chronologically with their key argument
+            // Detail mode: running first, then last 3 completed with args
             let mut parts: Vec<String> = Vec::new();
-            // Running tools first
             for tool in running.iter().take(2) {
                 let short = Self::shorten_tool_name(&tool.name);
                 if let Some(ref arg) = tool.arg {
@@ -227,8 +226,7 @@ impl Segment for ToolsSegment {
                     parts.push(format!("◐ {}", short));
                 }
             }
-            // Last N completed tools (chronological, most recent last)
-            let max_detail = 6usize.saturating_sub(parts.len());
+            let max_detail = 3usize.saturating_sub(parts.len());
             let recent_completed: Vec<_> = completed.iter()
                 .rev()
                 .take(max_detail)
@@ -275,13 +273,33 @@ impl Segment for ToolsSegment {
             return None;
         }
 
+        // Secondary: per-tool counts for all completed, sorted by frequency
+        let secondary = if !completed.is_empty() {
+            let mut counts: HashMap<String, u32> = HashMap::new();
+            for tool in &completed {
+                *counts.entry(tool.name.clone()).or_insert(0) += 1;
+            }
+            let mut count_vec: Vec<(String, u32)> = counts.into_iter().collect();
+            count_vec.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+            let stats = count_vec.iter()
+                .map(|(name, count)| {
+                    let short = Self::shorten_tool_name(name);
+                    format!("{}×{}", short, count)
+                })
+                .collect::<Vec<_>>()
+                .join(" ");
+            format!("=> {}", stats)
+        } else {
+            String::new()
+        };
+
         let mut metadata = HashMap::new();
         metadata.insert("running".to_string(), running.len().to_string());
         metadata.insert("completed".to_string(), completed.len().to_string());
 
         Some(SegmentData {
             primary,
-            secondary: String::new(),
+            secondary,
             metadata,
         })
     }
