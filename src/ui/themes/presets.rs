@@ -133,6 +133,7 @@ impl ThemePresets {
             SegmentConfig {
                 id: SegmentId::Tools,
                 enabled: false,
+            line: 0,
                 icon: IconConfig {
                     plain: "⚙".to_string(),
                     nerd_font: "\u{f013}".to_string(),
@@ -148,6 +149,7 @@ impl ThemePresets {
             SegmentConfig {
                 id: SegmentId::Agents,
                 enabled: false,
+            line: 0,
                 icon: IconConfig {
                     plain: "◈".to_string(),
                     nerd_font: "\u{f085}".to_string(),
@@ -163,6 +165,7 @@ impl ThemePresets {
             SegmentConfig {
                 id: SegmentId::Todos,
                 enabled: false,
+            line: 0,
                 icon: IconConfig {
                     plain: "▸".to_string(),
                     nerd_font: "\u{f0ae}".to_string(),
@@ -178,6 +181,7 @@ impl ThemePresets {
             SegmentConfig {
                 id: SegmentId::Environment,
                 enabled: false,
+            line: 0,
                 icon: IconConfig {
                     plain: "⊞".to_string(),
                     nerd_font: "\u{f489}".to_string(),
@@ -193,6 +197,7 @@ impl ThemePresets {
             SegmentConfig {
                 id: SegmentId::SessionName,
                 enabled: false,
+            line: 0,
                 icon: IconConfig {
                     plain: "◆".to_string(),
                     nerd_font: "\u{f040}".to_string(),
@@ -204,6 +209,42 @@ impl ThemePresets {
                 },
                 styles: TextStyleConfig::default(),
                 options: HashMap::new(),
+            },
+            SegmentConfig {
+                id: SegmentId::Skills,
+                enabled: false,
+                line: 0,
+                icon: IconConfig {
+                    plain: "📚".to_string(),
+                    nerd_font: "\u{f0278}".to_string(),
+                },
+                colors: ColorConfig {
+                    icon: Some(AnsiColor::Color16 { c16: 11 }),
+                    text: Some(AnsiColor::Color16 { c16: 11 }),
+                    background: None,
+                },
+                styles: TextStyleConfig::default(),
+                options: HashMap::new(),
+            },
+            SegmentConfig {
+                id: SegmentId::Hooks,
+                enabled: false,
+                line: 0,
+                icon: IconConfig {
+                    plain: "⚙".to_string(),
+                    nerd_font: "\u{eb01}".to_string(),
+                },
+                colors: ColorConfig {
+                    icon: Some(AnsiColor::Color16 { c16: 8 }),
+                    text: Some(AnsiColor::Color16 { c16: 8 }),
+                    background: None,
+                },
+                styles: TextStyleConfig::default(),
+                options: {
+                    let mut opts = HashMap::new();
+                    opts.insert("show_args".to_string(), serde_json::Value::Bool(false));
+                    opts
+                },
             },
         ]
     }
