@@ -363,6 +363,57 @@ secondary = "=> 4 skills"
 
 **注意**: Skills 和 Tools 互斥 — Tools 跳过 `name="Skill"` 的条目，Skills 只处理 `name="Skill"` 的条目。
 
+一条 Skill 的记录是这样的：
+
+```json
+// jq -c 'select(any(.message.content[]?; .name == "Skill"))' *.jsonl
+{
+  "parentUuid": "a0a0c525-2ce5-401b-9144-4ade76144c3e",
+  "isSidechain": false,
+  "userType": "external",
+  "cwd": "/Users/cdcd/roobli/RTFS_justTaste/custom_claude_statusline",
+  "sessionId": "98e79635-989e-4bd2-b756-861bdb810341",
+  "version": "2.1.63",
+  "gitBranch": "HEAD",
+  "message": {
+    "id": "gen-1773925271-shBLZ8RZSk310Anrrjb9",
+    "type": "message",
+    "role": "assistant",
+    "container": null,
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_vrtx_01KabLmVRd2n6kxoH22chFdR",
+        "caller": {
+          "type": "direct"
+        },
+        "name": "Skill",
+        "input": {
+          "skill": "superpowers:brainstorming"
+        }
+      }
+    ],
+    "model": "anthropic/claude-4.6-sonnet-20260217",
+    "stop_reason": null,
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cache_creation_input_tokens": null,
+      "cache_read_input_tokens": null,
+      "cache_creation": null,
+      "inference_geo": null,
+      "server_tool_use": null,
+      "service_tier": null
+    },
+    "provider": "Google"
+  },
+  "type": "assistant",
+  "uuid": "5624853a-1ed0-4a53-85ec-460950ce55e0",
+  "timestamp": "2026-03-19T13:01:22.081Z"
+}
+```
+
 ### 14. **Hooks** — JSONL（全文扫描，匹配 progress 事件）
 ```
 input.transcript_path → 逐行找 type="progress" 且含 data.hook_event
