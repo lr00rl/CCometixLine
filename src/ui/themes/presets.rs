@@ -135,7 +135,7 @@ impl ThemePresets {
                 enabled: false,
             line: 0,
                 icon: IconConfig {
-                    plain: "⚙".to_string(),
+                    plain: "⚙️".to_string(),
                     nerd_font: "\u{f013}".to_string(),
                 },
                 colors: ColorConfig {
@@ -151,7 +151,7 @@ impl ThemePresets {
                 enabled: false,
             line: 0,
                 icon: IconConfig {
-                    plain: "◈".to_string(),
+                    plain: "🤔".to_string(),
                     nerd_font: "\u{f085}".to_string(),
                 },
                 colors: ColorConfig {
@@ -167,7 +167,7 @@ impl ThemePresets {
                 enabled: false,
             line: 0,
                 icon: IconConfig {
-                    plain: "▸".to_string(),
+                    plain: "🎯".to_string(),
                     nerd_font: "\u{f0ae}".to_string(),
                 },
                 colors: ColorConfig {
@@ -183,7 +183,7 @@ impl ThemePresets {
                 enabled: false,
             line: 0,
                 icon: IconConfig {
-                    plain: "⊞".to_string(),
+                    plain: "🧩".to_string(),
                     nerd_font: "\u{f489}".to_string(),
                 },
                 colors: ColorConfig {
@@ -199,7 +199,7 @@ impl ThemePresets {
                 enabled: false,
             line: 0,
                 icon: IconConfig {
-                    plain: "◆".to_string(),
+                    plain: "💬".to_string(),
                     nerd_font: "\u{f040}".to_string(),
                 },
                 colors: ColorConfig {
@@ -231,7 +231,7 @@ impl ThemePresets {
                 enabled: false,
                 line: 5,
                 icon: IconConfig {
-                    plain: "⚙".to_string(),
+                    plain: "📎".to_string(),
                     nerd_font: "\u{eb01}".to_string(),
                 },
                 colors: ColorConfig {

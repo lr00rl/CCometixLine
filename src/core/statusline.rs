@@ -139,7 +139,11 @@ impl StatusLineGenerator {
 
     fn render_segment(&self, config: &SegmentConfig, data: &SegmentData) -> String {
         let icon = if let Some(dynamic_icon) = data.metadata.get("dynamic_icon") {
-            dynamic_icon.clone()
+            // dynamic_icon is typically a Nerd Font glyph; only use it when mode supports it
+            match self.config.style.mode {
+                StyleMode::NerdFont | StyleMode::Powerline => dynamic_icon.clone(),
+                StyleMode::Plain => config.icon.plain.clone(),
+            }
         } else {
             self.get_icon(config)
         };

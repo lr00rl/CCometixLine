@@ -208,21 +208,21 @@ impl Segment for TodosSegment {
             let mut parts: Vec<String> = Vec::new();
 
             if let Some(p) = prev {
-                parts.push(format!("✓ {}", Self::trunc(&p.content, 30)));
+                parts.push(format!("✓ {}", Self::trunc(&p.content, 50)));
             }
 
             parts.push(format!(
-                "▶ {} ({}/{})",
-                Self::trunc(&current.content, 30),
+                "⏳ {} ({}/{})",
+                Self::trunc(&current.content, 50),
                 completed_count,
                 total
             ));
 
             if let Some(n) = next {
-                parts.push(format!("› {}", Self::trunc(&n.content, 30)));
+                parts.push(format!("👉 {}", Self::trunc(&n.content, 50)));
             }
 
-            parts.join(" -→ ")
+            parts.join(" → ")
 
         } else if completed_count == total && total > 0 {
             // All done — show last two completed as a trail
@@ -235,18 +235,18 @@ impl Segment for TodosSegment {
                 .rev()
                 .collect();
             let trail = last_two.iter()
-                .map(|t| format!("✓ {}", Self::trunc(&t.content, 30)))
+                .map(|t| format!("✓ {}", Self::trunc(&t.content, 50)))
                 .collect::<Vec<_>>()
-                .join("  →  ");
+                .join(" → ");
             format!("{}  ✦ {}/{}", trail, completed_count, total)
 
         } else {
             // No active task, some pending
             let first_pending = todos.iter().find(|t| t.status == "pending");
             let pending_label = first_pending
-                .map(|t| format!(" › {}", Self::trunc(&t.content, 30)))
+                .map(|t| format!("👉 {}", Self::trunc(&t.content, 50)))
                 .unwrap_or_default();
-            format!("{}/{}{}", completed_count, total, pending_label)
+            format!("{}/{} {}", completed_count, total, pending_label)
         };
 
         let mut metadata = HashMap::new();
