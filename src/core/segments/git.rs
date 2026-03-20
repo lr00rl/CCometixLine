@@ -218,7 +218,22 @@ impl GitSegment {
 
 impl Segment for GitSegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
-        let git_info = self.get_git_info(&input.workspace.current_dir)?;
+        crate::log_debug!(
+            "git: checking working_dir={:?} show_sha={} show_file_stats={}",
+            input.workspace.current_dir, self.show_sha, self.show_file_stats
+        );
+        let git_info = match self.get_git_info(&input.workspace.current_dir) {
+            Some(info) => info,
+            None => {
+                crate::log_debug!("git: not a git repository or git command failed");
+                return None;
+            }
+        };
+        crate::log_debug!(
+            "git: branch={:?} status={:?} ahead={} behind={} sha={:?} file_stats={:?}",
+            git_info.branch, git_info.status, git_info.ahead, git_info.behind,
+            git_info.sha, git_info.file_stats
+        );
 
         let mut metadata = HashMap::new();
         metadata.insert("branch".to_string(), git_info.branch.clone());

@@ -151,18 +151,22 @@ impl HooksSegment {
 
 impl Segment for HooksSegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
+        crate::log_debug!("hooks: reading transcript {:?}", input.transcript_path);
         let config = crate::config::Config::load().ok();
         let show_args = config.as_ref()
             .and_then(|c| c.segments.iter().find(|s| s.id == SegmentId::Hooks))
             .and_then(|sc| sc.options.get("show_args"))
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
+        crate::log_debug!("hooks: show_args={}", show_args);
 
         let hooks = Self::parse_hooks(&input.transcript_path);
 
         if hooks.is_empty() {
+            crate::log_debug!("hooks: no type=\"progress\" hook entries found in transcript, returning None");
             return None;
         }
+        crate::log_debug!("hooks: parsed {} hook records", hooks.len());
 
         let running: Vec<&HookRecord> = hooks.iter().filter(|h| Self::is_running(h)).collect();
         let completed: Vec<&HookRecord> = hooks.iter().filter(|h| !Self::is_running(h)).collect();

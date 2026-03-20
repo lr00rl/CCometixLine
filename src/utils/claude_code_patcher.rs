@@ -142,8 +142,8 @@ impl ClaudeCodePatcher {
             return None;
         }
 
-        println!(
-            "Found Spinner component with spinnerTip and overrideMessage at {}-{}",
+        crate::log_debug!(
+            "patcher: found Spinner component with spinnerTip and overrideMessage at {}-{}",
             node.start_byte(),
             node.end_byte()
         );
@@ -191,8 +191,8 @@ impl ClaudeCodePatcher {
                         let end = child.end_byte();
                         let text = self.get_node_text(child);
 
-                        println!(
-                            "Found Spinner verbose property: '{}' at {}-{}",
+                        crate::log_debug!(
+                            "patcher: found Spinner verbose property: '{}' at {}-{}",
                             text, start, end
                         );
 
@@ -222,8 +222,8 @@ impl ClaudeCodePatcher {
             let node_text = self.get_node_text(node);
 
             if node_text.contains("Context low (") {
-                println!(
-                    "Found context low function at {}-{}",
+                crate::log_debug!(
+                    "patcher: found context low function at {}-{}",
                     node.start_byte(),
                     node.end_byte()
                 );
@@ -254,8 +254,8 @@ impl ClaudeCodePatcher {
                     let start = node.start_byte();
                     let end = node.end_byte();
 
-                    println!(
-                        "Found if statement: '{}' at {}-{}",
+                    crate::log_debug!(
+                        "patcher: found if statement: '{}' at {}-{}",
                         node_text.trim(),
                         start,
                         end
@@ -285,14 +285,14 @@ impl ClaudeCodePatcher {
 
     /// Find ESC interrupt condition using cached AST
     fn find_esc_interrupt_condition(&self, root: Node) -> Option<LocationResult> {
-        println!("Parsing JavaScript with tree-sitter...");
+        crate::log_debug!("patcher: parsing ESC interrupt ternary via AST...");
 
         let result = self.find_esc_ternary_in_node(root);
 
         if result.is_some() {
-            println!("  ✅ Found ESC interrupt ternary via AST");
+            crate::log_debug!("patcher: found ESC interrupt ternary via AST");
         } else {
-            println!("  ❌ Could not find ESC interrupt ternary in AST");
+            crate::log_debug!("patcher: could not find ESC interrupt ternary in AST");
         }
 
         result
@@ -334,16 +334,16 @@ impl ClaudeCodePatcher {
         let condition_end = condition.end_byte();
         let condition_text = self.get_node_text(condition);
 
-        println!(
-            "  Found ESC ternary: condition='{}' at {}-{}",
+        crate::log_debug!(
+            "patcher: found ESC ternary: condition='{}' at {}-{}",
             condition_text, condition_start, condition_end
         );
-        println!(
-            "    consequence contains key:\"esc\": {}",
+        crate::log_debug!(
+            "patcher:   consequence contains key:\"esc\": {}",
             consequence_text.len() > 50
         );
-        println!(
-            "    alternative is empty array: {}",
+        crate::log_debug!(
+            "patcher:   alternative is empty array: {}",
             alternative_text == "[]"
         );
 
@@ -362,7 +362,7 @@ impl ClaudeCodePatcher {
     fn find_chrome_subscription_check(&self, root: Node) -> Option<LocationResult> {
         let anchor = "tengu_claude_in_chrome_setup";
         let anchor_pos = self.file_content.find(anchor)?;
-        println!("Found anchor '{}' at position: {}", anchor, anchor_pos);
+        crate::log_debug!("patcher: found anchor '{}' at position: {}", anchor, anchor_pos);
 
         self.find_chrome_check_in_node(root, anchor_pos)
     }
@@ -393,7 +393,7 @@ impl ClaudeCodePatcher {
             return None;
         }
 
-        println!("Found Chrome check pattern: '{}'", node_text);
+        crate::log_debug!("patcher: found Chrome check pattern: '{}'", node_text);
         self.find_and_expression_in_node(node)
     }
 
@@ -410,8 +410,8 @@ impl ClaudeCodePatcher {
                     let and_end = right.end_byte();
                     let and_text = self.file_content[and_start..and_end].to_string();
 
-                    println!(
-                        "Part to remove: '{}' at {}-{}",
+                    crate::log_debug!(
+                        "patcher: part to remove: '{}' at {}-{}",
                         and_text, and_start, and_end
                     );
 
@@ -441,8 +441,8 @@ impl ClaudeCodePatcher {
     fn find_chrome_command_message(&self, root: Node) -> Option<LocationResult> {
         let anchor = r#""Claude in Chrome requires a claude.ai subscription.""#;
         let anchor_pos = self.file_content.find(anchor)?;
-        println!(
-            "Found /chrome subscription message at position: {}",
+        crate::log_debug!(
+            "patcher: found /chrome subscription message at position: {}",
             anchor_pos
         );
 
@@ -498,8 +498,8 @@ impl ClaudeCodePatcher {
             let replace_end = op_end;
             let replace_text = self.file_content[replace_start..replace_end].to_string();
 
-            println!(
-                "  Found condition '{}' at {}-{}",
+            crate::log_debug!(
+                "patcher: found condition '{}' at {}-{}",
                 replace_text, replace_start, replace_end
             );
 
@@ -521,8 +521,8 @@ impl ClaudeCodePatcher {
     fn find_chrome_startup_notification_check(&self, root: Node) -> Option<LocationResult> {
         let anchor = r#"key:"chrome-requires-subscription""#;
         let anchor_pos = self.file_content.find(anchor)?;
-        println!(
-            "Found Chrome startup notification anchor at position: {}",
+        crate::log_debug!(
+            "patcher: found Chrome startup notification anchor at position: {}",
             anchor_pos
         );
 
@@ -567,7 +567,7 @@ impl ClaudeCodePatcher {
                         let start = child.start_byte();
                         let end = child.end_byte();
 
-                        println!("  Found condition '{}' at {}-{}", child_text, start, end);
+                        crate::log_debug!("patcher: found condition '{}' at {}-{}", child_text, start, end);
 
                         return Some(LocationResult {
                             start_index: start,
@@ -595,16 +595,16 @@ impl ClaudeCodePatcher {
         let old_changed = &self.file_content[start_index..end_index];
         let old_after = &self.file_content[end_index..context_end_old];
 
-        println!("\n--- {} Diff ---", title);
-        println!(
-            "OLD: {}\x1b[31m{}\x1b[0m{}",
+        crate::log_debug!("--- {} Diff ---", title);
+        crate::log_debug!(
+            "OLD: {}<<<{}>>>{}",
             old_before, old_changed, old_after
         );
-        println!(
-            "NEW: {}\x1b[32m{}\x1b[0m{}",
+        crate::log_debug!(
+            "NEW: {}<<<{}>>>{}",
             old_before, injected_text, old_after
         );
-        println!("--- End Diff ---\n");
+        crate::log_debug!("--- End Diff ---");
     }
 
     /// Save the modified content back to file
@@ -631,7 +631,7 @@ impl ClaudeCodePatcher {
         let tree = match self.parse_tree() {
             Some(t) => t,
             None => {
-                println!("⚠️ Failed to parse JavaScript AST");
+                crate::log_error!("patcher: failed to parse JavaScript AST");
                 return vec![
                     ("Spinner token counter", false),
                     ("Context low warnings", false),
@@ -663,7 +663,7 @@ impl ClaudeCodePatcher {
                 results.push(("Spinner token counter", true));
             }
             None => {
-                println!("⚠️ Could not enable Spinner token counter");
+                crate::log_info!("patcher: could not enable Spinner token counter");
                 results.push(("Spinner token counter", false));
             }
         }
@@ -685,7 +685,7 @@ impl ClaudeCodePatcher {
                 results.push(("Context low warnings", true));
             }
             None => {
-                println!("⚠️ Could not disable context low warnings");
+                crate::log_info!("patcher: could not disable context low warnings");
                 results.push(("Context low warnings", false));
             }
         }
@@ -694,8 +694,8 @@ impl ClaudeCodePatcher {
         match self.find_esc_interrupt_condition(root) {
             Some(loc) => {
                 let original_condition = loc.variable_name.clone().unwrap_or_default();
-                println!(
-                    "Replacing condition '{}' with '(false)' at position {}-{}",
+                crate::log_debug!(
+                    "patcher: replacing condition '{}' with '(false)' at position {}-{}",
                     original_condition, loc.start_index, loc.end_index
                 );
                 let replacement = "(false)".to_string();
@@ -712,7 +712,7 @@ impl ClaudeCodePatcher {
                 results.push(("ESC interrupt display", true));
             }
             None => {
-                println!("⚠️ Could not disable esc/interrupt display");
+                crate::log_info!("patcher: could not disable esc/interrupt display");
                 results.push(("ESC interrupt display", false));
             }
         }
@@ -720,8 +720,8 @@ impl ClaudeCodePatcher {
         // 4. Chrome subscription check
         match self.find_chrome_subscription_check(root) {
             Some(loc) => {
-                println!(
-                    "Removing '{}' at position {}-{}",
+                crate::log_debug!(
+                    "patcher: removing '{}' at position {}-{}",
                     loc.variable_name.as_ref().unwrap_or(&String::new()),
                     loc.start_index,
                     loc.end_index
@@ -740,7 +740,7 @@ impl ClaudeCodePatcher {
                 results.push(("Chrome subscription check", true));
             }
             None => {
-                println!("⚠️ Could not bypass Chrome subscription check");
+                crate::log_info!("patcher: could not bypass Chrome subscription check");
                 results.push(("Chrome subscription check", false));
             }
         }
@@ -748,8 +748,8 @@ impl ClaudeCodePatcher {
         // 5. /chrome command message
         match self.find_chrome_command_message(root) {
             Some(loc) => {
-                println!(
-                    "Replacing '{}' with 'false&&' at position {}-{}",
+                crate::log_debug!(
+                    "patcher: replacing '{}' with 'false&&' at position {}-{}",
                     loc.variable_name.as_ref().unwrap_or(&String::new()),
                     loc.start_index,
                     loc.end_index
@@ -768,7 +768,7 @@ impl ClaudeCodePatcher {
                 results.push(("/chrome command message", true));
             }
             None => {
-                println!("⚠️ Could not remove /chrome command subscription message");
+                crate::log_info!("patcher: could not remove /chrome command subscription message");
                 results.push(("/chrome command message", false));
             }
         }
@@ -776,8 +776,8 @@ impl ClaudeCodePatcher {
         // 6. Chrome startup notification
         match self.find_chrome_startup_notification_check(root) {
             Some(loc) => {
-                println!(
-                    "Replacing '{}' with 'false' at position {}-{}",
+                crate::log_debug!(
+                    "patcher: replacing '{}' with 'false' at position {}-{}",
                     loc.variable_name.as_ref().unwrap_or(&String::new()),
                     loc.start_index,
                     loc.end_index
@@ -796,7 +796,7 @@ impl ClaudeCodePatcher {
                 results.push(("Chrome startup notification", true));
             }
             None => {
-                println!("⚠️ Could not remove Chrome startup notification check");
+                crate::log_info!("patcher: could not remove Chrome startup notification check");
                 results.push(("Chrome startup notification", false));
             }
         }

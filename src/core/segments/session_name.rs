@@ -50,7 +50,17 @@ impl SessionNameSegment {
 
 impl Segment for SessionNameSegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
-        let name = Self::parse_session_name(&input.transcript_path)?;
+        crate::log_debug!("session_name: reading transcript {:?}", input.transcript_path);
+        let name = match Self::parse_session_name(&input.transcript_path) {
+            Some(n) => {
+                crate::log_debug!("session_name: found custom title {:?}", n);
+                n
+            }
+            None => {
+                crate::log_debug!("session_name: no type=\"custom-title\" entry found in transcript, returning None");
+                return None;
+            }
+        };
 
         let mut metadata = HashMap::new();
         metadata.insert("session_name".to_string(), name.clone());

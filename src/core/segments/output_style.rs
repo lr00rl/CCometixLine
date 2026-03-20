@@ -13,7 +13,16 @@ impl OutputStyleSegment {
 
 impl Segment for OutputStyleSegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
-        let output_style = input.output_style.as_ref()?;
+        let output_style = match input.output_style.as_ref() {
+            Some(s) => {
+                crate::log_debug!("output_style: name={:?}", s.name);
+                s
+            }
+            None => {
+                crate::log_debug!("output_style: no output_style in input, returning None");
+                return None;
+            }
+        };
 
         // Primary display: style name
         let primary = output_style.name.clone();

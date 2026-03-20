@@ -149,7 +149,19 @@ impl SessionSegment {
 
 impl Segment for SessionSegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
-        let cost_data = input.cost.as_ref()?;
+        let cost_data = match input.cost.as_ref() {
+            Some(c) => {
+                crate::log_debug!(
+                    "session: cost data present: duration_ms={:?} lines_added={:?} lines_removed={:?}",
+                    c.total_duration_ms, c.total_lines_added, c.total_lines_removed
+                );
+                c
+            }
+            None => {
+                crate::log_debug!("session: no cost data in input, returning None");
+                return None;
+            }
+        };
 
         // Primary display: total duration
         let primary = if let Some(duration) = cost_data.total_duration_ms {

@@ -38,6 +38,7 @@ impl DirectorySegment {
 
 impl Segment for DirectorySegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
+        crate::log_debug!("directory: current_dir={:?}", input.workspace.current_dir);
         let current_dir = &input.workspace.current_dir;
 
         // Handle cross-platform path separators manually for better compatibility

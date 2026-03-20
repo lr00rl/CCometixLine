@@ -147,14 +147,26 @@ impl AgentsSegment {
 
 impl Segment for AgentsSegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
+        crate::log_debug!("agents: reading transcript {:?}", input.transcript_path);
         let agents = Self::parse_agents(&input.transcript_path);
 
         if agents.is_empty() {
+            crate::log_debug!("agents: no tool_use with name=\"Task\" found in transcript, returning None");
             return None;
         }
 
         let running: Vec<&AgentRecord> = agents.iter().filter(|a| !a.completed).collect();
         let completed: Vec<&AgentRecord> = agents.iter().filter(|a| a.completed).collect();
+        crate::log_debug!(
+            "agents: total={} running={} completed={}",
+            agents.len(), running.len(), completed.len()
+        );
+        for agent in &agents {
+            crate::log_debug!(
+                "agents:   id={} type={:?} model={:?} completed={} desc={:?}",
+                agent.tool_use_id, agent.subagent_type, agent.model, agent.completed, agent.description
+            );
+        }
 
         let mut parts: Vec<String> = Vec::new();
 

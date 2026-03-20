@@ -195,7 +195,17 @@ impl UsageSegment {
 
 impl Segment for UsageSegment {
     fn collect(&self, _input: &InputData) -> Option<SegmentData> {
-        let token = credentials::get_oauth_token()?;
+        crate::log_debug!("usage: checking for oauth token");
+        let token = match credentials::get_oauth_token() {
+            Some(t) => {
+                crate::log_debug!("usage: oauth token found (len={})", t.len());
+                t
+            }
+            None => {
+                crate::log_debug!("usage: no oauth token found, returning None");
+                return None;
+            }
+        };
 
         // Load config from file to get segment options
         let config = crate::config::Config::load().ok()?;

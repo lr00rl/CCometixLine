@@ -388,6 +388,7 @@ pub fn collect_all_segments(
     for segment_config in &config.segments {
         // Skip disabled segments to avoid unnecessary API requests
         if !segment_config.enabled {
+            crate::log_debug!("segment {:?}: SKIPPED (disabled)", segment_config.id);
             continue;
         }
 
@@ -468,14 +469,19 @@ pub fn collect_all_segments(
             }
         };
 
-        if let Some(data) = segment_data {
-            crate::log_debug!(
-                "segment {:?}: primary={:?} secondary={:?}",
-                segment_config.id,
-                data.primary,
-                data.secondary
-            );
-            results.push((segment_config.clone(), data));
+        match segment_data {
+            Some(data) => {
+                crate::log_debug!(
+                    "segment {:?}: primary={:?} secondary={:?}",
+                    segment_config.id,
+                    data.primary,
+                    data.secondary
+                );
+                results.push((segment_config.clone(), data));
+            }
+            None => {
+                crate::log_debug!("segment {:?}: returned None (no data)", segment_config.id);
+            }
         }
     }
 

@@ -13,6 +13,10 @@ impl ModelSegment {
 
 impl Segment for ModelSegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
+        crate::log_debug!(
+            "model: id={:?} display_name={:?}",
+            input.model.id, input.model.display_name
+        );
         let mut metadata = HashMap::new();
         metadata.insert("model_id".to_string(), input.model.id.clone());
         metadata.insert("display_name".to_string(), input.model.display_name.clone());

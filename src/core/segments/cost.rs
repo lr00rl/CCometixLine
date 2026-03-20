@@ -13,7 +13,16 @@ impl CostSegment {
 
 impl Segment for CostSegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
-        let cost_data = input.cost.as_ref()?;
+        let cost_data = match input.cost.as_ref() {
+            Some(c) => {
+                crate::log_debug!("cost: total_cost_usd={:?}", c.total_cost_usd);
+                c
+            }
+            None => {
+                crate::log_debug!("cost: no cost data in input, returning None");
+                return None;
+            }
+        };
 
         // Primary display: total cost
         let primary = if let Some(cost) = cost_data.total_cost_usd {

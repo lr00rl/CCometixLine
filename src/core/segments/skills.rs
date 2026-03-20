@@ -113,14 +113,26 @@ impl SkillsSegment {
 
 impl Segment for SkillsSegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
+        crate::log_debug!("skills: reading transcript {:?}", input.transcript_path);
         let skills = Self::parse_skills(&input.transcript_path);
 
         if skills.is_empty() {
+            crate::log_debug!("skills: no tool_use with name=\"Skill\" found in transcript, returning None");
             return None;
         }
 
         let running: Vec<&SkillRecord> = skills.iter().filter(|s| !s.completed).collect();
         let completed: Vec<&SkillRecord> = skills.iter().filter(|s| s.completed).collect();
+        crate::log_debug!(
+            "skills: total={} running={} completed={}",
+            skills.len(), running.len(), completed.len()
+        );
+        for skill in &skills {
+            crate::log_debug!(
+                "skills:   id={} name={:?} completed={}",
+                skill.id, skill.skill_name, skill.completed
+            );
+        }
 
         let mut parts: Vec<String> = Vec::new();
 

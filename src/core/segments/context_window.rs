@@ -29,6 +29,7 @@ impl ContextWindowSegment {
 
 impl Segment for ContextWindowSegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
+        crate::log_debug!("context_window: reading transcript {:?} model={:?}", input.transcript_path, input.model.id);
         // Dynamically determine context limit based on current model ID
         let context_limit = Self::get_context_limit_for_model(&input.model.id);
 

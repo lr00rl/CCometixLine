@@ -204,21 +204,28 @@ impl ToolsSegment {
 
 impl Segment for ToolsSegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
+        crate::log_debug!("tools: reading transcript {:?}", input.transcript_path);
         let config = crate::config::Config::load().ok();
         let show_args = config.as_ref()
             .and_then(|c| c.segments.iter().find(|s| s.id == SegmentId::Tools))
             .and_then(|sc| sc.options.get("show_args"))
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
+        crate::log_debug!("tools: show_args={}", show_args);
 
         let tools = Self::parse_tools(&input.transcript_path);
 
         if tools.is_empty() {
+            crate::log_debug!("tools: no tool_use entries found in transcript, returning None");
             return None;
         }
 
         let running: Vec<&ToolRecord> = tools.iter().filter(|t| !t.completed).collect();
         let completed: Vec<&ToolRecord> = tools.iter().filter(|t| t.completed).collect();
+        crate::log_debug!(
+            "tools: total={} running={} completed={}",
+            tools.len(), running.len(), completed.len()
+        );
 
         let primary = if show_args {
             // Detail mode: running first, then last 3 completed with args

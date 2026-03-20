@@ -151,6 +151,7 @@ impl EnvironmentSegment {
 impl Segment for EnvironmentSegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
         let cwd = &input.workspace.current_dir;
+        crate::log_debug!("environment: scanning cwd={:?}", cwd);
 
         let config = crate::config::Config::load().ok();
         let show_names = config.as_ref()
@@ -163,8 +164,14 @@ impl Segment for EnvironmentSegment {
         let rule_names = Self::get_rule_names(cwd);
         let (mcp_names, hook_events, hook_cmds) = Self::get_mcp_and_hook_names(cwd);
 
+        crate::log_debug!(
+            "environment: claude_md={:?} rules={:?} mcps={:?} hooks={:?}",
+            claude_md_paths, rule_names, mcp_names, hook_events
+        );
+
         let total = claude_md_paths.len() + rule_names.len() + mcp_names.len() + hook_events.len();
         if total == 0 {
+            crate::log_debug!("environment: no CLAUDE.md, rules, MCPs, or hooks found, returning None");
             return None;
         }
 

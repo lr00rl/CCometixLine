@@ -177,15 +177,22 @@ impl TodosSegment {
 
 impl Segment for TodosSegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
+        crate::log_debug!("todos: reading transcript {:?}", input.transcript_path);
         let todos = Self::parse_todos(&input.transcript_path);
 
         if todos.is_empty() {
+            crate::log_debug!("todos: no TaskCreate/TodoWrite entries found in transcript, returning None");
             return None;
         }
 
         let total = todos.len();
         let completed_count = todos.iter().filter(|t| t.status == "completed").count();
+        let pending_count = todos.iter().filter(|t| t.status == "pending").count();
         let in_progress: Vec<&Todo> = todos.iter().filter(|t| t.status == "in_progress").collect();
+        crate::log_debug!(
+            "todos: total={} completed={} in_progress={} pending={}",
+            total, completed_count, in_progress.len(), pending_count
+        );
 
         let primary = if let Some(current) = in_progress.first() {
             // Find current's position to locate prev/next neighbours

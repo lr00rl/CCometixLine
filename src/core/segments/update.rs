@@ -13,14 +13,23 @@ impl UpdateSegment {
 
 impl Segment for UpdateSegment {
     fn collect(&self, _input: &InputData) -> Option<SegmentData> {
-        // Load update state and check for update status
+        crate::log_debug!("update: loading update state");
         let update_state = UpdateState::load();
 
-        update_state.status_text().map(|status_text| SegmentData {
-            primary: status_text,
-            secondary: String::new(),
-            metadata: std::collections::HashMap::new(),
-        })
+        match update_state.status_text() {
+            Some(status_text) => {
+                crate::log_debug!("update: status_text={:?}", status_text);
+                Some(SegmentData {
+                    primary: status_text,
+                    secondary: String::new(),
+                    metadata: std::collections::HashMap::new(),
+                })
+            }
+            None => {
+                crate::log_debug!("update: no update status available, returning None");
+                None
+            }
+        }
     }
 
     fn id(&self) -> SegmentId {
