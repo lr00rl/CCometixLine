@@ -122,11 +122,17 @@ impl ToolsSegment {
                 obj.get("command")
                     .and_then(|v| v.as_str())
                     .map(|s| {
-                        let s = s.trim();
+                        let s = s
+                            .lines()
+                            .map(str::trim)
+                            .filter(|line| !line.is_empty())
+                            .collect::<Vec<_>>()
+                            .join("; ");
+
                         if s.len() > 35 {
                             format!("{}…", &s[..34])
                         } else {
-                            s.to_string()
+                            s
                         }
                     })
             }
