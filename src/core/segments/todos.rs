@@ -31,6 +31,9 @@ impl TodosSegment {
 
         let reader = BufReader::new(file);
         let mut latest_todos: Vec<Todo> = Vec::new();
+        // Counter for TaskCreate: generates sequential IDs "1","2","3"...
+        // matching the taskId values used by TaskUpdate.
+        let mut task_seq: u32 = 0;
 
         for line in reader.lines() {
             let line = match line {
@@ -63,7 +66,7 @@ impl TodosSegment {
                 }
                 let tool_name = block.name.as_deref().unwrap_or("");
 
-                // Handle TodoWrite tool
+                // Handle TodoWrite tool — replaces entire list
                 if tool_name == "TodoWrite" {
                     if let Some(input) = &block.input {
                         if let Some(todos_arr) = input.get("todos").and_then(|v| v.as_array()) {
@@ -87,21 +90,26 @@ impl TodosSegment {
                                 .collect();
                             if !todos.is_empty() {
                                 latest_todos = todos;
+                                // Reset counter so subsequent TaskCreate IDs
+                                // continue from where TodoWrite left off.
+                                task_seq = 0;
                             }
                         }
                     }
                 }
 
-                // Handle TaskCreate / TaskUpdate tools for ECC-style todos
+                // Handle TaskCreate — assign sequential ID "1","2","3"...
+                // so TaskUpdate's numeric taskId correctly lines up.
                 if tool_name == "TaskCreate" {
                     if let Some(input) = &block.input {
-                        let id = block.id.clone().unwrap_or_else(|| format!("task_{}", latest_todos.len()));
                         let content = input
                             .get("subject")
                             .and_then(|v| v.as_str())
                             .unwrap_or("")
                             .to_string();
                         if !content.is_empty() {
+                            task_seq += 1;
+                            let id = task_seq.to_string();
                             latest_todos.push(Todo {
                                 id,
                                 content,
@@ -112,6 +120,7 @@ impl TodosSegment {
                     }
                 }
 
+                // Handle TaskUpdate — match by numeric taskId
                 if tool_name == "TaskUpdate" {
                     if let Some(input) = &block.input {
                         let task_id = input
@@ -125,9 +134,8 @@ impl TodosSegment {
                             .unwrap_or("")
                             .to_string();
                         if !task_id.is_empty() && !new_status.is_empty() {
-                            // Update todo if it matches by id or content contains task_id
                             for todo in &mut latest_todos {
-                                if todo.id == task_id || todo.id.contains(&task_id) {
+                                if todo.id == task_id {
                                     todo.status = new_status.clone();
                                     break;
                                 }
@@ -139,6 +147,18 @@ impl TodosSegment {
         }
 
         latest_todos
+    }
+}
+
+impl TodosSegment {
+    /// Truncate to max grapheme clusters, appending … if cut.
+    fn trunc(s: &str, max: usize) -> String {
+        let chars: Vec<char> = s.chars().collect();
+        if chars.len() <= max {
+            s.to_string()
+        } else {
+            format!("{}…", chars[..max - 1].iter().collect::<String>())
+        }
     }
 }
 
@@ -155,25 +175,64 @@ impl Segment for TodosSegment {
         let in_progress: Vec<&Todo> = todos.iter().filter(|t| t.status == "in_progress").collect();
 
         let primary = if let Some(current) = in_progress.first() {
-            let content = if current.content.len() > 25 {
-                format!("{}…", &current.content[..24])
-            } else {
-                current.content.clone()
-            };
-            format!("▸ {} ({}/{})", content, completed_count, total)
-        } else if completed_count == total {
-            format!("✓ All done ({}/{})", completed_count, total)
+            // Find current's position to locate prev/next neighbours
+            let cur_idx = todos.iter().position(|t| t.id == current.id).unwrap_or(0);
+
+            // prev = last completed task before current in list order
+            let prev = todos[..cur_idx].iter().rev().find(|t| t.status == "completed");
+
+            // next = first pending task after current in list order
+            let next = todos.get(cur_idx + 1..)
+                .and_then(|rest| rest.iter().find(|t| t.status == "pending"));
+
+            let mut parts: Vec<String> = Vec::new();
+
+            if let Some(p) = prev {
+                parts.push(format!("✓ {}", Self::trunc(&p.content, 13)));
+            }
+
+            parts.push(format!(
+                "▶ {} ({}/{})",
+                Self::trunc(&current.content, 20),
+                completed_count,
+                total
+            ));
+
+            if let Some(n) = next {
+                parts.push(format!("› {}", Self::trunc(&n.content, 13)));
+            }
+
+            parts.join("  →  ")
+
+        } else if completed_count == total && total > 0 {
+            // All done — show last two completed as a trail
+            let last_two: Vec<_> = todos.iter()
+                .filter(|t| t.status == "completed")
+                .rev()
+                .take(2)
+                .collect::<Vec<_>>()
+                .into_iter()
+                .rev()
+                .collect();
+            let trail = last_two.iter()
+                .map(|t| format!("✓ {}", Self::trunc(&t.content, 30)))
+                .collect::<Vec<_>>()
+                .join("  →  ");
+            format!("{}  ✦ {}/{}", trail, completed_count, total)
+
         } else {
-            format!("({}/{})", completed_count, total)
+            // No active task, some pending
+            let first_pending = todos.iter().find(|t| t.status == "pending");
+            let pending_label = first_pending
+                .map(|t| format!(" › {}", Self::trunc(&t.content, 18)))
+                .unwrap_or_default();
+            format!("{}/{}{}", completed_count, total, pending_label)
         };
 
         let mut metadata = HashMap::new();
         metadata.insert("total".to_string(), total.to_string());
         metadata.insert("completed".to_string(), completed_count.to_string());
-        metadata.insert(
-            "in_progress".to_string(),
-            in_progress.len().to_string(),
-        );
+        metadata.insert("in_progress".to_string(), in_progress.len().to_string());
 
         Some(SegmentData {
             primary,
