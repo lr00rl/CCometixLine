@@ -64,7 +64,7 @@ impl AgentsSegment {
 
             for block in blocks {
                 match block.r#type.as_str() {
-                    "tool_use" if block.name.as_deref() == Some("Task") => {
+                    "tool_use" if matches!(block.name.as_deref(), Some("Task") | Some("Agent")) => {
                         if let Some(id) = &block.id {
                             let input = block.input.as_ref();
                             let subagent_type = input
@@ -151,7 +151,7 @@ impl Segment for AgentsSegment {
         let agents = Self::parse_agents(&input.transcript_path);
 
         if agents.is_empty() {
-            crate::log_debug!("agents: no tool_use with name=\"Task\" found in transcript, returning None");
+            crate::log_debug!("agents: no tool_use with name=\"Task\"/\"Agent\" found in transcript, returning None");
             return None;
         }
 

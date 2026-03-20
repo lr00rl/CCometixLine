@@ -62,7 +62,8 @@ impl ToolsSegment {
                     "tool_use" => {
                         if let (Some(id), Some(name)) = (&block.id, &block.name) {
                             // Skip Skill tool — handled by SkillsSegment
-                            if name == "Skill" {
+                            // Skip Agent/Task tool — handled by AgentsSegment
+                            if name == "Skill" || name == "Agent" || name == "Task" {
                                 continue;
                             }
                             let arg = block.input.as_ref().and_then(|v| {
