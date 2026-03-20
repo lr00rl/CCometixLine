@@ -68,7 +68,7 @@ impl App {
     pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         // Ensure themes directory and built-in themes exist
         if let Err(e) = crate::config::loader::ConfigLoader::init_themes() {
-            eprintln!("Warning: Failed to initialize themes: {}", e);
+            crate::log_error!("Failed to initialize themes: {}", e);
         }
 
         // Load config

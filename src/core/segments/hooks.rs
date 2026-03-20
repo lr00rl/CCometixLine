@@ -230,7 +230,7 @@ impl Segment for HooksSegment {
                 format!("{}×{}", short, count)
             })
             .collect::<Vec<_>>()
-            .join("  ");
+            .join(" ");
         let secondary = format!("=> {}", stats);
 
         let mut metadata = HashMap::new();

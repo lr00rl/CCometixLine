@@ -134,16 +134,29 @@ impl TodosSegment {
                             .unwrap_or("")
                             .to_string();
                         if !task_id.is_empty() && !new_status.is_empty() {
-                            for todo in &mut latest_todos {
-                                if todo.id == task_id {
-                                    todo.status = new_status.clone();
-                                    break;
+                            if new_status == "deleted" {
+                                // Remove deleted tasks entirely
+                                latest_todos.retain(|t| t.id != task_id);
+                            } else {
+                                for todo in &mut latest_todos {
+                                    if todo.id == task_id {
+                                        todo.status = new_status.clone();
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+        }
+
+        // Log final state
+        for todo in &latest_todos {
+            crate::log_debug!(
+                "todos: id={} status={} content={:?}",
+                todo.id, todo.status, todo.content
+            );
         }
 
         latest_todos
@@ -188,21 +201,21 @@ impl Segment for TodosSegment {
             let mut parts: Vec<String> = Vec::new();
 
             if let Some(p) = prev {
-                parts.push(format!("✓ {}", Self::trunc(&p.content, 13)));
+                parts.push(format!("✓ {}", Self::trunc(&p.content, 30)));
             }
 
             parts.push(format!(
                 "▶ {} ({}/{})",
-                Self::trunc(&current.content, 20),
+                Self::trunc(&current.content, 30),
                 completed_count,
                 total
             ));
 
             if let Some(n) = next {
-                parts.push(format!("› {}", Self::trunc(&n.content, 13)));
+                parts.push(format!("› {}", Self::trunc(&n.content, 30)));
             }
 
-            parts.join("  →  ")
+            parts.join(" -→ ")
 
         } else if completed_count == total && total > 0 {
             // All done — show last two completed as a trail
@@ -224,7 +237,7 @@ impl Segment for TodosSegment {
             // No active task, some pending
             let first_pending = todos.iter().find(|t| t.status == "pending");
             let pending_label = first_pending
-                .map(|t| format!(" › {}", Self::trunc(&t.content, 18)))
+                .map(|t| format!(" › {}", Self::trunc(&t.content, 30)))
                 .unwrap_or_default();
             format!("{}/{}{}", completed_count, total, pending_label)
         };

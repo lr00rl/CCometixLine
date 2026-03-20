@@ -91,6 +91,11 @@ impl ToolsSegment {
             }
         }
 
+        crate::log_debug!(
+            "tools: parsed {} tool records from {:?}",
+            tool_map.len(), transcript_path
+        );
+
         // Return last 100 tool records
         let mut records: Vec<ToolRecord> = tool_map.into_values().collect();
         // Sort by id (lexicographic approximates insertion order for UUID-like ids)
