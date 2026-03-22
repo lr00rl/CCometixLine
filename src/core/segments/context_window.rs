@@ -80,9 +80,9 @@ impl Segment for ContextWindowSegment {
         metadata.insert("limit".to_string(), context_limit.to_string());
         metadata.insert("model".to_string(), input.model.id.clone());
 
-        // Show token breakdown (input + cache)
+        // Show token breakdown (new input + cache write + cache read)
         let secondary = parse_token_breakdown(&input.transcript_path)
-            .map(|(input_t, cache_t)| {
+            .map(|(input_t, cache_write_t, cache_read_t)| {
                 let fmt_k = |t: u32| {
                     if t >= 1000 {
                         format!("{:.1}k", t as f64 / 1000.0)
@@ -90,7 +90,21 @@ impl Segment for ContextWindowSegment {
                         t.to_string()
                     }
                 };
-                format!("[in: {}; cache: {}]", fmt_k(input_t), fmt_k(cache_t))
+                let mut parts = Vec::new();
+                if input_t > 0 {
+                    parts.push(format!("new: {}", fmt_k(input_t)));
+                }
+                if cache_write_t > 0 {
+                    parts.push(format!("cw: {}", fmt_k(cache_write_t)));
+                }
+                if cache_read_t > 0 {
+                    parts.push(format!("cr: {}", fmt_k(cache_read_t)));
+                }
+                if parts.is_empty() {
+                    String::new()
+                } else {
+                    format!("[{}]", parts.join("; "))
+                }
             })
             .unwrap_or_default();
 
@@ -305,8 +319,8 @@ fn try_find_usage_from_project_history(transcript_path: &Path) -> Option<u32> {
     None
 }
 
-/// Parse the last assistant message and return (input_tokens, cache_read_tokens)
-fn parse_token_breakdown<P: AsRef<Path>>(transcript_path: P) -> Option<(u32, u32)> {
+/// Parse the last assistant message and return (input_tokens, cache_creation_tokens, cache_read_tokens)
+fn parse_token_breakdown<P: AsRef<Path>>(transcript_path: P) -> Option<(u32, u32, u32)> {
     let path = transcript_path.as_ref();
     let file = fs::File::open(path).ok()?;
     let reader = BufReader::new(file);
@@ -325,7 +339,7 @@ fn parse_token_breakdown<P: AsRef<Path>>(transcript_path: P) -> Option<(u32, u32
                 if let Some(message) = &entry.message {
                     if let Some(raw_usage) = &message.usage {
                         let normalized = raw_usage.clone().normalize();
-                        return Some((normalized.input_tokens, normalized.cache_read_input_tokens));
+                        return Some((normalized.input_tokens, normalized.cache_creation_input_tokens, normalized.cache_read_input_tokens));
                     }
                 }
             }
