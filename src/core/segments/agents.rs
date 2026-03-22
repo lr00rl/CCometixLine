@@ -170,31 +170,35 @@ impl Segment for AgentsSegment {
 
         let mut parts: Vec<String> = Vec::new();
 
-        // Show running agents first (up to 2)
-        for agent in running.iter().take(2) {
-            let mut s = format!("◐ {}", agent.subagent_type);
+        let format_agent = |agent: &AgentRecord, icon: &str| -> String {
+            let mut s = format!("{} {}", icon, agent.subagent_type);
             if let Some(ref model) = agent.model {
                 s.push_str(&format!(" [{}]", Self::shorten_model(model)));
             }
-            // Show beginning of description (up to 20 chars)
+            if let Some(dur) = agent.duration_s {
+                if agent.completed {
+                    s.push_str(&format!(" {}",  Self::format_duration(dur)));
+                }
+            }
             if !agent.description.is_empty() {
-                let desc = if agent.description.len() > 20 {
-                    format!("{}…", &agent.description[..19])
+                let desc = if agent.description.len() > 30 {
+                    format!("{}… ", &agent.description[..29])
                 } else {
                     agent.description.clone()
                 };
                 s.push_str(&format!(" · {}", desc));
             }
-            parts.push(s);
+            s
+        };
+
+        // Show running agents first (up to 2)
+        for agent in running.iter().take(2) {
+            parts.push(format_agent(agent, "◐"));
         }
 
-        // Show last completed agents (up to 1)
-        for agent in completed.iter().rev().take(1) {
-            let mut s = format!("✓ {}", agent.subagent_type);
-            if let Some(dur) = agent.duration_s {
-                s.push_str(&format!(" · {}", Self::format_duration(dur)));
-            }
-            parts.push(s);
+        // Show last completed agents (up to 2)
+        for agent in completed.iter().rev().take(2).collect::<Vec<_>>().into_iter().rev() {
+            parts.push(format_agent(agent, "✓"));
         }
 
         if parts.is_empty() {
@@ -203,13 +207,33 @@ impl Segment for AgentsSegment {
 
         let primary = parts.join("  ");
 
+        // Secondary: summary line
+        let total = agents.len();
+        let secondary = if total > 0 {
+            let mut summary = format!("=> Agent×{}", total);
+            if !running.is_empty() || !completed.is_empty() {
+                let mut status_parts: Vec<String> = Vec::new();
+                if !completed.is_empty() {
+                    status_parts.push(format!("{} done", completed.len()));
+                }
+                if !running.is_empty() {
+                    status_parts.push(format!("{} running", running.len()));
+                }
+                summary.push_str(&format!(" ({})", status_parts.join(", ")));
+            }
+            summary
+        } else {
+            String::new()
+        };
+
         let mut metadata = HashMap::new();
         metadata.insert("running".to_string(), running.len().to_string());
         metadata.insert("completed".to_string(), completed.len().to_string());
+        metadata.insert("total".to_string(), total.to_string());
 
         Some(SegmentData {
             primary,
-            secondary: String::new(),
+            secondary,
             metadata,
         })
     }
