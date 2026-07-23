@@ -7,7 +7,7 @@ extends it to other AI coding agents. Status as of 2026-07:
 |-------|-----------|--------|
 | Claude Code | native `statusLine` command | ✅ full support |
 | pi | native `statusLine` command (pi-statusline) | ✅ full support, honors `context_window` |
-| Kimi (K3 / K2.7) | via Claude Code + Moonshot Anthropic endpoint | ✅ works, models recognized |
+| Kimi Code CLI (K3 / K2.7) | `ccline --kimi` reads kimi-code sessions | ✅ sidecar / tmux mode; Claude Code + Moonshot endpoint also works |
 | Codex CLI | `ccline --codex` reads rollout sessions | ✅ sidecar / tmux mode |
 
 ## Input dialects
@@ -80,9 +80,45 @@ empty under pi. Context, model, git, directory, cost all work. The payload's
 ## Kimi
 
 The Kimi Code CLI (MoonshotAI/kimi-code) has **no statusline hook yet**
-(tracked in issue #1954; community PRs #2043 / #1493 unmerged). The supported
-path is running Kimi models **through Claude Code** via Moonshot's
-Anthropic-compatible endpoint:
+(tracked in issue #1954; community PRs #2043 / #1493 unmerged). ccline
+supports it two ways.
+
+### Pull mode: `ccline --kimi`
+
+Reads kimi-code session files directly, same idea as codex mode:
+
+```bash
+ccline --kimi                     # auto-detect the active session
+ccline --kimi-session ~/.kimi-code/sessions/<workDirKey>/<sessionId>
+# (a direct path to .../agents/main/wire.jsonl also works)
+```
+
+Auto-detection reads `$KIMI_CODE_HOME/session_index.jsonl` (default
+`~/.kimi-code`), orders sessions by the mtime of their main agent's
+`wire.jsonl`, and prefers a session whose `workDir` matches the current
+directory. Only the **main** agent stream is read — subagent usage never
+pollutes the numbers.
+
+Parsed from the session: the last `usage.record` op (per-request
+`inputOther` / `output` / `inputCacheRead` / `inputCacheCreation` → context
+usage + cache-aware breakdown) and the active model alias. The model's
+`display_name` and `max_context_size` come from kimi-code's own
+`~/.kimi-code/config.toml`, so limits stay correct when you switch models
+(K3 = 1M, K2.7 Coding = 256K).
+
+tmux popup example:
+
+```tmux
+bind C-k display-popup -w 90% -h 10 -d "#{pane_current_path}" -E "while :; do clear; ~/.claude/ccline/ccline --kimi; sleep 5; done"
+```
+
+If upstream ships the proposed native statusline (PR #2043's `context` block),
+ccline already understands that payload dialect too.
+
+### Via Claude Code
+
+Run Kimi models **through Claude Code** via Moonshot's Anthropic-compatible
+endpoint:
 
 ```bash
 export ANTHROPIC_BASE_URL="https://api.moonshot.ai/anthropic"

@@ -32,6 +32,15 @@ pub struct Cli {
     /// Explicit codex rollout .jsonl path (implies --codex)
     #[arg(long = "codex-session")]
     pub codex_session: Option<String>,
+
+    /// Read status from Kimi Code CLI sessions instead of stdin
+    /// (kimi-code has no external statusline hook; use this from tmux/sidecar)
+    #[arg(long = "kimi")]
+    pub kimi: bool,
+
+    /// Explicit kimi session dir or wire.jsonl path (implies --kimi)
+    #[arg(long = "kimi-session")]
+    pub kimi_session: Option<String>,
 }
 
 impl Cli {

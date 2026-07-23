@@ -1,4 +1,5 @@
 pub mod codex;
+pub mod kimi;
 pub mod segments;
 pub mod statusline;
 
