@@ -24,7 +24,58 @@ Works with multiple AI coding agents, not just Claude Code:
 | **Kimi** (K3 / K2.7) | Via Claude Code + Moonshot Anthropic-compatible endpoint | Kimi Code CLI has no statusline hook yet; models auto-recognized |
 | **Codex CLI** | `ccline --codex` reads rollout sessions | Codex has no external statusline hook; use in tmux / sidecar pane |
 
-See [docs/multi-agent.md](docs/multi-agent.md) for setup details per agent.
+### Quick setup per agent
+
+**Claude Code** — add to `~/.claude/settings.json`:
+
+```json
+{
+  "statusLine": { "type": "command", "command": "~/.claude/ccline/ccline", "padding": 0 }
+}
+```
+
+**pi** — add to `~/.pi/agent/settings.json` (requires the `pi-statusline` package):
+
+```json
+{
+  "packages": ["npm:pi-statusline"],
+  "statusLine": { "type": "command", "command": "~/.claude/ccline/ccline" }
+}
+```
+
+ccline automatically uses pi's `context_window` payload, so the context limit
+and token breakdown are exact for whatever model pi is running (Kimi K3 1M,
+GLM, etc.).
+
+**Kimi (K3 / K2.7)** — the Kimi Code CLI has no statusline hook yet, so run
+Kimi models through Claude Code via Moonshot's Anthropic-compatible endpoint;
+ccline then works unchanged and recognizes the models out of the box:
+
+```bash
+export ANTHROPIC_BASE_URL="https://api.moonshot.ai/anthropic"
+export ANTHROPIC_AUTH_TOKEN="$MOONSHOT_API_KEY"
+export ANTHROPIC_MODEL="kimi-k3"        # or kimi-k2.7-code
+claude
+```
+
+**Codex CLI** — codex cannot run external statusline commands, so ccline pulls
+status from codex session files instead. Run it anywhere you like (tmux status
+bar, sidecar pane):
+
+```bash
+ccline --codex                          # auto-detect: newest session, prefers current dir
+ccline --codex-session /path/to/rollout-....jsonl   # pin a specific session
+
+# tmux status bar example
+set -g status-interval 5
+set -g status-right "#(cd #{pane_current_path} && ~/.claude/ccline/ccline --codex)"
+
+# or a live sidecar pane
+watch -n 5 '~/.claude/ccline/ccline --codex'
+```
+
+See [docs/multi-agent.md](docs/multi-agent.md) for protocol details, payload
+dialects, and per-agent capability notes.
 
 ## Features
 

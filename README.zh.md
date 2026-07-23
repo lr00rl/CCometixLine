@@ -24,7 +24,54 @@
 | **Kimi**（K3 / K2.7） | 经 Claude Code + Moonshot Anthropic 兼容端点 | Kimi Code CLI 暂无 statusline 钩子；模型自动识别 |
 | **Codex CLI** | `ccline --codex` 直读 rollout 会话文件 | Codex 无外部 statusline 钩子；适用于 tmux / 侧边栏 |
 
-各 agent 的配置方法见 [docs/multi-agent.md](docs/multi-agent.md)。
+### 各 Agent 快速上手
+
+**Claude Code** — 在 `~/.claude/settings.json` 中添加：
+
+```json
+{
+  "statusLine": { "type": "command", "command": "~/.claude/ccline/ccline", "padding": 0 }
+}
+```
+
+**pi** — 在 `~/.pi/agent/settings.json` 中添加（需要 `pi-statusline` 包）：
+
+```json
+{
+  "packages": ["npm:pi-statusline"],
+  "statusLine": { "type": "command", "command": "~/.claude/ccline/ccline" }
+}
+```
+
+ccline 会自动使用 pi 载荷中的 `context_window` 数据，因此无论 pi 跑的是什么模型
+（Kimi K3 1M、GLM 等），上下文上限和 token 分解都是精确的。
+
+**Kimi（K3 / K2.7）** — Kimi Code CLI 暂无 statusline 钩子，推荐通过 Moonshot 的
+Anthropic 兼容端点在 Claude Code 里跑 Kimi 模型；ccline 无需任何改动即可识别：
+
+```bash
+export ANTHROPIC_BASE_URL="https://api.moonshot.ai/anthropic"
+export ANTHROPIC_AUTH_TOKEN="$MOONSHOT_API_KEY"
+export ANTHROPIC_MODEL="kimi-k3"        # 或 kimi-k2.7-code
+claude
+```
+
+**Codex CLI** — codex 不支持外部 statusline 命令，ccline 改为直接读取 codex
+会话文件。可放在 tmux 状态栏或侧边栏：
+
+```bash
+ccline --codex                          # 自动检测：最新会话，优先匹配当前目录
+ccline --codex-session /path/to/rollout-....jsonl   # 指定某个会话
+
+# tmux 状态栏示例
+set -g status-interval 5
+set -g status-right "#(cd #{pane_current_path} && ~/.claude/ccline/ccline --codex)"
+
+# 或开一个实时侧边栏
+watch -n 5 '~/.claude/ccline/ccline --codex'
+```
+
+协议细节、载荷方言和各 agent 能力说明见 [docs/multi-agent.md](docs/multi-agent.md)。
 
 ## 特性
 
