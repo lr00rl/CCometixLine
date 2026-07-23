@@ -17,6 +17,9 @@ impl Segment for ModelSegment {
             "model: id={:?} display_name={:?}",
             input.model.id, input.model.display_name
         );
+        if input.model.id.is_empty() && input.model.display_name.is_empty() {
+            return None;
+        }
         let mut metadata = HashMap::new();
         metadata.insert("model_id".to_string(), input.model.id.clone());
         metadata.insert("display_name".to_string(), input.model.display_name.clone());
