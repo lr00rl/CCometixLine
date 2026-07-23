@@ -56,13 +56,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         config = ccometixline::ui::themes::ThemePresets::get_theme(&theme);
     }
 
-    // Codex mode: no stdin protocol — read the rollout session file directly
+    // Pull modes: no stdin protocol — read the agent's session files directly
     let codex_mode = cli.codex || cli.codex_session.is_some();
+    let kimi_mode = cli.kimi || cli.kimi_session.is_some();
     let input: InputData = if codex_mode {
         match ccometixline::core::codex::build_input(cli.codex_session.as_deref()) {
             Some(input) => input,
             None => {
                 ccometixline::log_debug!("codex: no rollout session found");
+                return Ok(());
+            }
+        }
+    } else if kimi_mode {
+        match ccometixline::core::kimi::build_input(cli.kimi_session.as_deref()) {
+            Some(input) => input,
+            None => {
+                ccometixline::log_debug!("kimi: no session found");
                 return Ok(());
             }
         }

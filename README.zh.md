@@ -21,7 +21,7 @@
 |-------|---------|------|
 | **Claude Code** | 原生 `statusLine` 命令 | 完整功能（含基于 transcript 的段） |
 | **pi** | 原生 `statusLine` 命令 | 识别 pi 的 `context_window` 载荷（正确的上下文上限 + token 分解） |
-| **Kimi**（K3 / K2.7） | 经 Claude Code + Moonshot Anthropic 兼容端点 | Kimi Code CLI 暂无 statusline 钩子；模型自动识别 |
+| **Kimi Code CLI**（K3 / K2.7） | `ccline --kimi` 直读 kimi-code 会话文件 | 上游暂无 statusline 钩子；也可经 Claude Code + Moonshot 端点使用 |
 | **Codex CLI** | `ccline --codex` 直读 rollout 会话文件 | Codex 无外部 statusline 钩子；适用于 tmux / 侧边栏 |
 
 ### 各 Agent 快速上手
@@ -46,8 +46,22 @@
 ccline 会自动使用 pi 载荷中的 `context_window` 数据，因此无论 pi 跑的是什么模型
 （Kimi K3 1M、GLM 等），上下文上限和 token 分解都是精确的。
 
-**Kimi（K3 / K2.7）** — Kimi Code CLI 暂无 statusline 钩子，推荐通过 Moonshot 的
-Anthropic 兼容端点在 Claude Code 里跑 Kimi 模型；ccline 无需任何改动即可识别：
+**Kimi（K3 / K2.7）** — Kimi Code CLI 暂无 statusline 钩子，ccline 采用与 codex
+相同的直读模式读取其会话文件：
+
+```bash
+ccline --kimi                           # 自动检测：最新会话，优先匹配当前目录
+ccline --kimi-session ~/.kimi-code/sessions/<wd>/<session>   # 指定会话
+
+# tmux popup 示例
+bind C-k display-popup -w 90% -h 10 -E "while :; do clear; ~/.claude/ccline/ccline --kimi; sleep 5; done"
+```
+
+模型显示名和上下文上限直接读 kimi-code 自己的 `~/.kimi-code/config.toml`，
+切换模型后依然正确。
+
+另一种方式：通过 Moonshot 的 Anthropic 兼容端点在 Claude Code 里跑 Kimi 模型，
+ccline 原生渲染：
 
 ```bash
 export ANTHROPIC_BASE_URL="https://api.moonshot.ai/anthropic"

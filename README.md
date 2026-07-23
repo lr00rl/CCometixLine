@@ -21,7 +21,7 @@ Works with multiple AI coding agents, not just Claude Code:
 |-------|-------------|-------|
 | **Claude Code** | Native `statusLine` command | Full feature set (incl. transcript-based segments) |
 | **pi** | Native `statusLine` command | Honors pi's `context_window` payload (correct limits + token breakdown) |
-| **Kimi** (K3 / K2.7) | Via Claude Code + Moonshot Anthropic-compatible endpoint | Kimi Code CLI has no statusline hook yet; models auto-recognized |
+| **Kimi Code CLI** (K3 / K2.7) | `ccline --kimi` reads kimi-code sessions | No statusline hook upstream yet; also works via Claude Code + Moonshot endpoint |
 | **Codex CLI** | `ccline --codex` reads rollout sessions | Codex has no external statusline hook; use in tmux / sidecar pane |
 
 ### Quick setup per agent
@@ -47,9 +47,22 @@ ccline automatically uses pi's `context_window` payload, so the context limit
 and token breakdown are exact for whatever model pi is running (Kimi K3 1M,
 GLM, etc.).
 
-**Kimi (K3 / K2.7)** — the Kimi Code CLI has no statusline hook yet, so run
-Kimi models through Claude Code via Moonshot's Anthropic-compatible endpoint;
-ccline then works unchanged and recognizes the models out of the box:
+**Kimi (K3 / K2.7)** — the Kimi Code CLI has no statusline hook yet, so ccline
+pulls status from its session files, same as codex mode:
+
+```bash
+ccline --kimi                           # auto-detect: newest session, prefers current dir
+ccline --kimi-session ~/.kimi-code/sessions/<wd>/<session>   # pin a session
+
+# tmux popup example
+bind C-k display-popup -w 90% -h 10 -E "while :; do clear; ~/.claude/ccline/ccline --kimi; sleep 5; done"
+```
+
+Model display name and context limit are read from kimi-code's own
+`~/.kimi-code/config.toml`, so they stay correct when you switch models.
+
+Alternatively run Kimi models through Claude Code via Moonshot's
+Anthropic-compatible endpoint; ccline then renders natively:
 
 ```bash
 export ANTHROPIC_BASE_URL="https://api.moonshot.ai/anthropic"
