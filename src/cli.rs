@@ -23,6 +23,15 @@ pub struct Cli {
     /// Log level: debug | info | error (default: info)
     #[arg(long = "loglevel", default_value = "info")]
     pub loglevel: String,
+
+    /// Read status from OpenAI Codex CLI rollout sessions instead of stdin
+    /// (codex has no external statusline hook; use this from tmux/sidecar)
+    #[arg(long = "codex")]
+    pub codex: bool,
+
+    /// Explicit codex rollout .jsonl path (implies --codex)
+    #[arg(long = "codex-session")]
+    pub codex_session: Option<String>,
 }
 
 impl Cli {

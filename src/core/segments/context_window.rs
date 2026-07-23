@@ -30,10 +30,18 @@ impl ContextWindowSegment {
 impl Segment for ContextWindowSegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
         crate::log_debug!("context_window: reading transcript {:?} model={:?}", input.transcript_path, input.model.id);
-        // Dynamically determine context limit based on current model ID
-        let context_limit = Self::get_context_limit_for_model(&input.model.id);
+        // Context limit priority: host-provided context_window_size (pi, kimi)
+        // > models.toml / built-in model lookup
+        let host_ctx = input.context_window.as_ref();
+        let context_limit = host_ctx
+            .and_then(|cw| cw.context_window_size)
+            .filter(|&size| size > 0)
+            .unwrap_or_else(|| Self::get_context_limit_for_model(&input.model.id));
 
-        let context_used_token_opt = parse_transcript_usage(&input.transcript_path);
+        // Used tokens priority: host-provided usage > transcript parsing
+        let context_used_token_opt = host_ctx
+            .and_then(|cw| cw.used_context_tokens())
+            .or_else(|| parse_transcript_usage(&input.transcript_path));
 
         let (percentage_display, tokens_display, context_used_rate) = match context_used_token_opt {
             Some(context_used_token) => {
@@ -81,7 +89,19 @@ impl Segment for ContextWindowSegment {
         metadata.insert("model".to_string(), input.model.id.clone());
 
         // Show token breakdown (new input + cache write + cache read)
-        let secondary = parse_token_breakdown(&input.transcript_path)
+        // Priority: host-provided current_usage > transcript parsing
+        let breakdown = host_ctx
+            .and_then(|cw| cw.current_usage.as_ref())
+            .map(|u| {
+                (
+                    u.input_tokens.unwrap_or(0),
+                    u.cache_creation_input_tokens.unwrap_or(0),
+                    u.cache_read_input_tokens.unwrap_or(0),
+                )
+            })
+            .filter(|&(i, cw_t, cr)| i + cw_t + cr > 0)
+            .or_else(|| parse_token_breakdown(&input.transcript_path));
+        let secondary = breakdown
             .map(|(input_t, cache_write_t, cache_read_t)| {
                 let fmt_k = |t: u32| {
                     if t >= 1000 {

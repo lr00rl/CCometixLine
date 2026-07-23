@@ -94,14 +94,17 @@ pub struct SegmentsConfig {
 }
 
 // Data structures compatible with existing main.rs
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub struct Model {
+    #[serde(default)]
     pub id: String,
+    #[serde(default)]
     pub display_name: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub struct Workspace {
+    #[serde(default)]
     pub current_dir: String,
 }
 
@@ -119,13 +122,110 @@ pub struct OutputStyle {
     pub name: String,
 }
 
-#[derive(Deserialize)]
+/// Per-request token breakdown provided directly by the host agent (pi sends
+/// this inside `context_window.current_usage`).
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct CurrentUsage {
+    #[serde(default)]
+    pub input_tokens: Option<u32>,
+    #[serde(default)]
+    pub output_tokens: Option<u32>,
+    #[serde(default)]
+    pub cache_creation_input_tokens: Option<u32>,
+    #[serde(default)]
+    pub cache_read_input_tokens: Option<u32>,
+}
+
+impl CurrentUsage {
+    /// Tokens currently occupying the context window.
+    pub fn context_tokens(&self) -> u32 {
+        self.input_tokens.unwrap_or(0)
+            + self.output_tokens.unwrap_or(0)
+            + self.cache_creation_input_tokens.unwrap_or(0)
+            + self.cache_read_input_tokens.unwrap_or(0)
+    }
+}
+
+/// Context window info provided directly by the host agent, bypassing
+/// transcript parsing and models.toml limits when present.
+///
+/// Field aliases cover the two known dialects:
+///   - pi (`pi-statusline`): `context_window` with `context_window_size`,
+///     `used_percentage` and a `current_usage` breakdown
+///   - kimi-code statusline proposal (PR #2043): `context` with
+///     `used_tokens` / `max_tokens` / `percent`
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct ContextWindowInput {
+    #[serde(default, alias = "max_tokens")]
+    pub context_window_size: Option<u32>,
+    #[serde(default, alias = "percent")]
+    pub used_percentage: Option<f64>,
+    #[serde(default)]
+    pub used_tokens: Option<u32>,
+    #[serde(default)]
+    pub total_input_tokens: Option<u32>,
+    #[serde(default)]
+    pub total_output_tokens: Option<u32>,
+    #[serde(default)]
+    pub current_usage: Option<CurrentUsage>,
+}
+
+/// pi-specific extension block (`pi-statusline` package).
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct PiExtension {
+    /// Path to pi's full native session JSONL (richer than the minimal
+    /// statusline transcript pi writes to `transcript_path`).
+    #[serde(default)]
+    pub session_file: Option<String>,
+}
+
+#[derive(Deserialize, Default)]
 pub struct InputData {
+    #[serde(default)]
     pub model: Model,
+    #[serde(default)]
     pub workspace: Workspace,
+    #[serde(default)]
     pub transcript_path: String,
+    #[serde(default)]
     pub cost: Option<Cost>,
+    #[serde(default)]
     pub output_style: Option<OutputStyle>,
+    #[serde(default)]
+    pub session_id: Option<String>,
+    #[serde(default, alias = "context")]
+    pub context_window: Option<ContextWindowInput>,
+    #[serde(default)]
+    pub pi: Option<PiExtension>,
+}
+
+impl ContextWindowInput {
+    /// Best available count of tokens currently in the context window.
+    /// Priority: current_usage breakdown > used_tokens > total input+output.
+    pub fn used_context_tokens(&self) -> Option<u32> {
+        if let Some(usage) = &self.current_usage {
+            let t = usage.context_tokens();
+            if t > 0 {
+                return Some(t);
+            }
+        }
+        if let Some(t) = self.used_tokens {
+            if t > 0 {
+                return Some(t);
+            }
+        }
+        match (self.total_input_tokens, self.total_output_tokens) {
+            (None, None) => None,
+            (i, o) => {
+                let t = i.unwrap_or(0) + o.unwrap_or(0);
+                if t > 0 {
+                    Some(t)
+                } else {
+                    None
+                }
+            }
+        }
+    }
 }
 
 // OpenAI-style nested token details
@@ -406,6 +506,47 @@ impl RawUsage {
 
 // Legacy alias for backward compatibility
 pub type Usage = RawUsage;
+
+#[cfg(test)]
+mod input_tests {
+    use super::*;
+
+    /// Real payload shape emitted by pi's `pi-statusline` package.
+    #[test]
+    fn parses_pi_payload() {
+        let raw = r#"{"cwd":"/Users/x/.pi","session_id":"019f82c0","transcript_path":"/Users/x/.pi/agent/statusline-transcripts/019f82c0.jsonl","model":{"id":"k3","display_name":"Kimi K3"},"workspace":{"current_dir":"/Users/x/.pi","project_dir":"/Users/x/.pi"},"version":null,"output_style":{"name":"default"},"cost":{"total_cost_usd":0.178,"total_duration_ms":4741596,"total_api_duration_ms":null,"total_lines_added":null,"total_lines_removed":null},"context_window":{"total_input_tokens":22078,"total_output_tokens":4586,"context_window_size":1048576,"used_percentage":1,"remaining_percentage":99,"current_usage":{"input_tokens":441,"output_tokens":466,"cache_creation_input_tokens":0,"cache_read_input_tokens":10496}},"exceeds_200k_tokens":false,"rate_limits":null,"vim":null,"agent":null,"worktree":null,"pi":{"session_file":"/Users/x/.pi/agent/sessions/x/2026.jsonl","refreshed_at_ms":1784615197794}}"#;
+        let input: InputData = serde_json::from_str(raw).expect("pi payload should parse");
+        assert_eq!(input.model.id, "k3");
+        assert_eq!(input.session_id.as_deref(), Some("019f82c0"));
+        let cw = input.context_window.expect("context_window present");
+        assert_eq!(cw.context_window_size, Some(1048576));
+        assert_eq!(cw.used_context_tokens(), Some(441 + 466 + 10496));
+        let pi = input.pi.expect("pi extension present");
+        assert!(pi.session_file.unwrap().ends_with("2026.jsonl"));
+    }
+
+    /// Claude Code's own payload has no context_window block — everything
+    /// stays optional and transcript parsing remains the fallback.
+    #[test]
+    fn parses_claude_code_payload() {
+        let raw = r#"{"model":{"id":"claude-sonnet-5","display_name":"Sonnet 5"},"workspace":{"current_dir":"/w"},"transcript_path":"/t.jsonl","cost":{"total_cost_usd":1.0,"total_duration_ms":1,"total_api_duration_ms":1,"total_lines_added":0,"total_lines_removed":0},"output_style":{"name":"default"}}"#;
+        let input: InputData = serde_json::from_str(raw).expect("claude payload should parse");
+        assert!(input.context_window.is_none());
+        assert_eq!(input.transcript_path, "/t.jsonl");
+    }
+
+    /// kimi-code statusline proposal (PR #2043) dialect: `context` block with
+    /// used_tokens / max_tokens / percent and no transcript_path.
+    #[test]
+    fn parses_kimi_context_dialect() {
+        let raw = r#"{"session_id":"s1","model":{"id":"kimi-k3","display_name":"Kimi K3"},"workspace":{"current_dir":"/w"},"context":{"used_tokens":50000,"max_tokens":1048576,"percent":4.8}}"#;
+        let input: InputData = serde_json::from_str(raw).expect("kimi payload should parse");
+        assert_eq!(input.transcript_path, "");
+        let cw = input.context_window.expect("context alias mapped");
+        assert_eq!(cw.context_window_size, Some(1048576));
+        assert_eq!(cw.used_context_tokens(), Some(50000));
+    }
+}
 
 /// A single content block within a message (tool_use, tool_result, text, etc.)
 #[derive(Debug, Clone, Deserialize)]

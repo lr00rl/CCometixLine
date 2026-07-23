@@ -56,30 +56,42 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         config = ccometixline::ui::themes::ThemePresets::get_theme(&theme);
     }
 
-    // Check if stdin has data
-    if io::stdin().is_terminal() {
-        if let Some(result) = MainMenu::run()? {
-            match result {
-                MenuResult::LaunchConfigurator => {
-                    ccometixline::ui::run_configurator()?;
-                }
-                MenuResult::InitConfig | MenuResult::CheckConfig => {}
-                MenuResult::Exit => {}
+    // Codex mode: no stdin protocol — read the rollout session file directly
+    let codex_mode = cli.codex || cli.codex_session.is_some();
+    let input: InputData = if codex_mode {
+        match ccometixline::core::codex::build_input(cli.codex_session.as_deref()) {
+            Some(input) => input,
+            None => {
+                ccometixline::log_debug!("codex: no rollout session found");
+                return Ok(());
             }
         }
-        return Ok(());
-    }
+    } else {
+        // Check if stdin has data
+        if io::stdin().is_terminal() {
+            if let Some(result) = MainMenu::run()? {
+                match result {
+                    MenuResult::LaunchConfigurator => {
+                        ccometixline::ui::run_configurator()?;
+                    }
+                    MenuResult::InitConfig | MenuResult::CheckConfig => {}
+                    MenuResult::Exit => {}
+                }
+            }
+            return Ok(());
+        }
 
-    // Read Claude Code data from stdin
-    let stdin = io::stdin();
-    let raw = {
-        use std::io::Read;
-        let mut buf = String::new();
-        stdin.lock().read_to_string(&mut buf)?;
-        buf
+        // Read agent statusline data (Claude Code / pi / compatible) from stdin
+        let stdin = io::stdin();
+        let raw = {
+            use std::io::Read;
+            let mut buf = String::new();
+            stdin.lock().read_to_string(&mut buf)?;
+            buf
+        };
+        ccometixline::log_debug!("raw stdin: {}", raw);
+        serde_json::from_str(&raw)?
     };
-    ccometixline::log_debug!("raw stdin: {}", raw);
-    let input: InputData = serde_json::from_str(&raw)?;
 
     // Collect segment data
     let segments_data = collect_all_segments(&config, &input);

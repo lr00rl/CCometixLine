@@ -303,15 +303,34 @@ impl Default for ModelConfig {
                     display_name: "GLM-4.5".to_string(),
                     context_limit: 128_000,
                 },
+                // Kimi: k3 is 1M context; matches "kimi-k3", bare "k3" (pi /
+                // Kimi subscription form) and "k3[1m]"
+                ModelEntry {
+                    pattern: "k3".to_string(),
+                    display_name: "Kimi K3".to_string(),
+                    context_limit: 1_048_576,
+                },
+                // Order matters: "kimi-k2" is a substring of the entries below,
+                // so more specific patterns must come first
+                ModelEntry {
+                    pattern: "kimi-k2.7-code".to_string(),
+                    display_name: "Kimi K2.7 Code".to_string(),
+                    context_limit: 262_144,
+                },
+                ModelEntry {
+                    pattern: "kimi-k2.6".to_string(),
+                    display_name: "Kimi K2.6".to_string(),
+                    context_limit: 262_144,
+                },
                 ModelEntry {
                     pattern: "kimi-k2-turbo".to_string(),
                     display_name: "Kimi K2 Turbo".to_string(),
-                    context_limit: 128_000,
+                    context_limit: 262_144,
                 },
                 ModelEntry {
                     pattern: "kimi-k2".to_string(),
                     display_name: "Kimi K2".to_string(),
-                    context_limit: 128_000,
+                    context_limit: 262_144,
                 },
                 ModelEntry {
                     pattern: "qwen3-coder".to_string(),

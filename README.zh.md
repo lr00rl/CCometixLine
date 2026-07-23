@@ -13,6 +13,19 @@
 
 状态栏显示：模型 | 目录 | Git 分支状态 | 上下文窗口信息
 
+## 支持的 AI Agent
+
+不止 Claude Code，可用于多个 AI 编程 agent：
+
+| Agent | 接入方式 | 说明 |
+|-------|---------|------|
+| **Claude Code** | 原生 `statusLine` 命令 | 完整功能（含基于 transcript 的段） |
+| **pi** | 原生 `statusLine` 命令 | 识别 pi 的 `context_window` 载荷（正确的上下文上限 + token 分解） |
+| **Kimi**（K3 / K2.7） | 经 Claude Code + Moonshot Anthropic 兼容端点 | Kimi Code CLI 暂无 statusline 钩子；模型自动识别 |
+| **Codex CLI** | `ccline --codex` 直读 rollout 会话文件 | Codex 无外部 statusline 钩子；适用于 tmux / 侧边栏 |
+
+各 agent 的配置方法见 [docs/multi-agent.md](docs/multi-agent.md)。
+
 ## 特性
 
 ### 核心功能

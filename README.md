@@ -13,6 +13,19 @@ A high-performance Claude Code statusline tool written in Rust with Git integrat
 
 The statusline shows: Model | Directory | Git Branch Status | Context Window Information
 
+## Supported AI Agents
+
+Works with multiple AI coding agents, not just Claude Code:
+
+| Agent | Integration | Notes |
+|-------|-------------|-------|
+| **Claude Code** | Native `statusLine` command | Full feature set (incl. transcript-based segments) |
+| **pi** | Native `statusLine` command | Honors pi's `context_window` payload (correct limits + token breakdown) |
+| **Kimi** (K3 / K2.7) | Via Claude Code + Moonshot Anthropic-compatible endpoint | Kimi Code CLI has no statusline hook yet; models auto-recognized |
+| **Codex CLI** | `ccline --codex` reads rollout sessions | Codex has no external statusline hook; use in tmux / sidecar pane |
+
+See [docs/multi-agent.md](docs/multi-agent.md) for setup details per agent.
+
 ## Features
 
 ### Core Functionality
