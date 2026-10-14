@@ -34,6 +34,24 @@
 }
 ```
 
+### 多套 Claude 账号
+
+用量段读取启动它的那个 Claude 进程的登录。`claude` 继续用 `~/.claude`。另一套配置启动时把 `CLAUDE_CONFIG_DIR` 设成该目录的绝对路径。状态栏命令会继承这个变量，所以两套配置可以调用同一个 `ccline` 二进制。二进制放在哪个目录里，不决定读哪个账号。
+
+```bash
+alias claude-talcum='CLAUDE_CONFIG_DIR="$HOME/.claude-talcum" claude'
+```
+
+每套配置的 `settings.json` 里都写上同一条 `statusLine`（上面的例子是 `~/.claude-talcum/settings.json`）。
+
+在 macOS 上，Claude Code 把登录放在钥匙串里。默认目录对应条目 `Claude Code-credentials`。其他目录对应 `Claude Code-credentials-` 加上该目录字符串 NFC 形式的 SHA-256 前 8 位十六进制。`/Users/you/.claude-work` 和 `~/.claude-work` 是不同条目，末尾多一个斜杠也是另一条。设置了目录之后，ccline 不会再回落到 `~/.claude`，因此没有登录时用量段为空，而不会显示另一个账号。
+
+在 Linux 和 Windows 上，登录文件是 `$CLAUDE_CONFIG_DIR/.credentials.json`，规则相同。
+
+设置了 `CLAUDE_SECURESTORAGE_CONFIG_DIR` 时，凭证库以它为准，不再看 `CLAUDE_CONFIG_DIR`。空字符串固定使用默认凭证库。设置了 `CLAUDE_CODE_CUSTOM_OAUTH_URL` 时，钥匙串名称是 `Claude Code-custom-oauth-credentials`，目录后缀规则不变。
+
+用量数字按凭证库分别缓存，路径是 `<store>/ccline/.api_usage_cache.json`。状态栏布局（`config.toml`、主题、`models.toml`）仍在 `~/.claude/ccline`。用量请求从当前配置的 `settings.json` 读取 `HTTPS_PROXY`，没有再读 `HTTP_PROXY`。
+
 **pi** — 在 `~/.pi/agent/settings.json` 中添加（需要 `pi-statusline` 包）：
 
 ```json

@@ -209,9 +209,14 @@ secondary = ""   // (因为 36.6% < 85%)
 
 ### 7. **Usage** — API 调用 + 文件缓存
 ```
-credentials::get_oauth_token() → OAuth token
+credentials::get_oauth_token() → 当前凭证库的 OAuth token
+    │   macOS: 钥匙串服务名 Claude Code-credentials，或
+    │           Claude Code-credentials-<sha256(NFC(目录)) 前 8 位>
+    │   其他平台: <凭证库>/.credentials.json
+    │   设了 CLAUDE_CONFIG_DIR / CLAUDE_SECURESTORAGE_CONFIG_DIR 时不回落到 ~/.claude
     │
-    ├── 检查缓存: ~/.claude/ccline/.api_usage_cache.json
+    ├── 检查缓存: <凭证库>/ccline/.api_usage_cache.json
+    │   默认凭证库仍是 ~/.claude/ccline/.api_usage_cache.json
     │   ├── is_cache_valid(): 检查 cached_at + cache_duration(300s)
     │   └── 如果有效 → 直接用缓存值 ("usage: using cached data")
     │

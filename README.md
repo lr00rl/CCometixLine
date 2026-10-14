@@ -34,6 +34,24 @@ Works with multiple AI coding agents, not just Claude Code:
 }
 ```
 
+### Multiple Claude accounts
+
+The usage segment reads the login of the Claude process that started it. Leave `claude` on `~/.claude`. Start the other profile with `CLAUDE_CONFIG_DIR` set to that directory's absolute path. The statusline command inherits the variable, so both profiles can call the same `ccline` binary. The binary's own path does not select the account.
+
+```bash
+alias claude-talcum='CLAUDE_CONFIG_DIR="$HOME/.claude-talcum" claude'
+```
+
+Put the same `statusLine` entry in each profile's `settings.json` (`~/.claude-talcum/settings.json` for the example above).
+
+On macOS, Claude Code keeps the login in the Keychain. The default directory uses the item `Claude Code-credentials`. Any other directory uses `Claude Code-credentials-` plus the first 8 hex characters of SHA-256 over the NFC form of the exact directory string. `/Users/you/.claude-work` and `~/.claude-work` are different items, and a trailing slash is a different item again. When a directory is set, ccline does not fall back to `~/.claude`, so a missing login shows no usage instead of the other account.
+
+On Linux and Windows the login file is `$CLAUDE_CONFIG_DIR/.credentials.json`, with the same rule.
+
+`CLAUDE_SECURESTORAGE_CONFIG_DIR`, when set, selects the credential store instead of `CLAUDE_CONFIG_DIR`. An empty value forces the default store. When `CLAUDE_CODE_CUSTOM_OAUTH_URL` is set, the Keychain name is `Claude Code-custom-oauth-credentials` with the same directory suffix.
+
+Usage numbers are cached per store at `<store>/ccline/.api_usage_cache.json`. The statusline layout (`config.toml`, themes, `models.toml`) stays in `~/.claude/ccline`. The usage request reads `HTTPS_PROXY`, then `HTTP_PROXY`, from the active profile's `settings.json`.
+
 **pi** — add to `~/.pi/agent/settings.json` (requires the `pi-statusline` package):
 
 ```json

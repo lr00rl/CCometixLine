@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **Per-profile usage account**: The usage segment follows `CLAUDE_CONFIG_DIR` and `CLAUDE_SECURESTORAGE_CONFIG_DIR`. On macOS it reads the Keychain item Claude Code names for that directory instead of always reading `Claude Code-credentials`. A set directory does not fall back to `~/.claude`. The usage cache and the usage-request proxy follow the same profile, so two accounts do not share one quota snapshot.
+
 ## [1.1.2] - 2026-03-15
 
 ### Changed
