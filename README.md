@@ -409,7 +409,3 @@ Contributions are welcome! Please feel free to submit issues or pull requests.
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=Haleclipse/CCometixLine&type=Date)](https://star-history.com/#Haleclipse/CCometixLine&Date)

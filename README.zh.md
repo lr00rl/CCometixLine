@@ -395,7 +395,3 @@ cargo build --release
 ## 许可证
 
 本项目采用 [MIT 许可证](LICENSE)。
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=Haleclipse/CCometixLine&type=Date)](https://star-history.com/#Haleclipse/CCometixLine&Date)
