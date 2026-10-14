@@ -11,7 +11,9 @@
 
 ![CCometixLine](assets/img1.png)
 
-状态栏显示：模型 | 目录 | Git 分支状态 | 上下文窗口信息
+这是一份配好的状态栏，数据是演示用的：演示目录、演示 git 提交、占位额度。
+
+第一行是模型、目录、git、会话名、会话时长和输出样式。第二行是上下文窗口、5 小时和 7 天用量额度、费用。后面几行是工具、子代理、待办、环境、技能和钩子。全新配置默认打开模型、目录、git、上下文、用量、费用、会话和输出样式。后面几行在 `~/.claude/ccline/config.toml` 里打开。
 
 ## 支持的 AI Agent
 
@@ -39,10 +41,10 @@
 用量段读取启动它的那个 Claude 进程的登录。`claude` 继续用 `~/.claude`。另一套配置启动时把 `CLAUDE_CONFIG_DIR` 设成该目录的绝对路径。状态栏命令会继承这个变量，所以两套配置可以调用同一个 `ccline` 二进制。二进制放在哪个目录里，不决定读哪个账号。
 
 ```bash
-alias claude-talcum='CLAUDE_CONFIG_DIR="$HOME/.claude-talcum" claude'
+alias claude-work='CLAUDE_CONFIG_DIR="$HOME/.claude-work" claude'
 ```
 
-每套配置的 `settings.json` 里都写上同一条 `statusLine`（上面的例子是 `~/.claude-talcum/settings.json`）。
+每套配置的 `settings.json` 里都写上同一条 `statusLine`（上面的例子是 `~/.claude-work/settings.json`）。路径用你实际导出的绝对路径。`~/.claude-work` 和 `/Users/you/.claude-work` 会算出不同的钥匙串条目。
 
 在 macOS 上，Claude Code 把登录放在钥匙串里。默认目录对应条目 `Claude Code-credentials`。其他目录对应 `Claude Code-credentials-` 加上该目录字符串 NFC 形式的 SHA-256 前 8 位十六进制。`/Users/you/.claude-work` 和 `~/.claude-work` 是不同条目，末尾多一个斜杠也是另一条。设置了目录之后，ccline 不会再回落到 `~/.claude`，因此没有登录时用量段为空，而不会显示另一个账号。
 
@@ -108,11 +110,12 @@ watch -n 5 '~/.claude/ccline/ccline --codex'
 ## 特性
 
 ### 核心功能
-- **Git 集成** 显示分支、状态和跟踪信息
-- **模型显示** 简化的 Claude 模型名称
-- **使用量跟踪** 基于转录文件分析  
-- **目录显示** 显示当前工作空间
-- **简洁设计** 使用 Nerd Font 图标
+- **Git 集成** 显示分支、状态、短 sha 和文件统计
+- **模型显示** 简化的 Claude 模型名
+- **上下文窗口** 来自转录，或来自主机提供的 `context_window`
+- **用量额度** 对应当前 Claude 登录：5 小时和 7 天，按凭证库分开缓存
+- **目录、费用、会话时长、输出样式**
+- **可选行** 工具、子代理、待办、技能、钩子、环境、会话名
 
 ### 交互式 TUI 功能
 - **交互式主菜单** 无输入时直接执行显示菜单
@@ -252,8 +255,10 @@ Move-Item "ccline.exe" "$env:USERPROFILE\.claude\ccline\"
 
 ### 从源码构建
 
+发布包和 `npm install -g @cometix/ccline` 装的是上游构建。上面说的按配置目录区分用量登录在本仓库里。要这个行为，从源码构建。
+
 ```bash
-git clone https://github.com/Haleclipse/CCometixLine.git
+git clone https://github.com/lr00rl/CCometixLine.git
 cd CCometixLine
 cargo build --release
 cp target/release/ccometixline ~/.claude/ccline/ccline
@@ -287,7 +292,7 @@ ccline --patch ~/.local/share/fnm/node-versions/v24.4.1/installation/lib/node_mo
 
 ## 默认段落
 
-显示：`目录 | Git 分支状态 | 模型 | 上下文窗口`
+全新配置显示模型、目录、git、上下文窗口、用量额度、费用、会话和输出样式。上面的截图另外打开了可选行。
 
 ### Git 状态指示器
 
@@ -322,7 +327,7 @@ CCometixLine 支持通过 TOML 文件和交互式 TUI 进行完整配置：
 - 颜色自定义
 - 格式选项
 
-支持的段落：目录、Git、模型、使用量、时间、成本、输出样式
+支持的段落：模型、目录、Git、上下文窗口、用量、费用、会话、输出样式、会话名、工具、子代理、待办、环境、技能、钩子、更新
 
 ### 模型配置 (`models.toml`)
 
