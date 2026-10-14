@@ -79,12 +79,7 @@ impl UsageSegment {
     }
 
     fn get_cache_path() -> Option<std::path::PathBuf> {
-        let home = dirs::home_dir()?;
-        Some(
-            home.join(".claude")
-                .join("ccline")
-                .join(".api_usage_cache.json"),
-        )
+        credentials::usage_cache_path()
     }
 
     fn load_cache(&self) -> Option<ApiUsageCache> {
@@ -139,11 +134,7 @@ impl UsageSegment {
     }
 
     fn get_proxy_from_settings() -> Option<String> {
-        let home = std::env::var("HOME")
-            .or_else(|_| std::env::var("USERPROFILE"))
-            .ok()?;
-        let settings_path = format!("{}/.claude/settings.json", home);
-
+        let settings_path = credentials::claude_settings_path()?;
         let content = std::fs::read_to_string(&settings_path).ok()?;
         let settings: serde_json::Value = serde_json::from_str(&content).ok()?;
 
@@ -289,14 +280,15 @@ impl Segment for UsageSegment {
 
         let primary = format!(
             "{} {}% ({} / 5h) | {} {}% ({} / 7d)",
-            bar5h, five_hour_percent, elapsed5h,
-            bar7d, seven_day_percent, elapsed7d
+            bar5h, five_hour_percent, elapsed5h, bar7d, seven_day_percent, elapsed7d
         );
         let secondary = String::new();
 
         crate::log_debug!(
             "usage: 5h={:.1}% 7d={:.1}% resets_at={:?}",
-            five_hour_util, seven_day_util, resets_at
+            five_hour_util,
+            seven_day_util,
+            resets_at
         );
 
         let mut metadata = HashMap::new();

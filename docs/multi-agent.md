@@ -56,6 +56,8 @@ Native. Add to `~/.claude/settings.json`:
 }
 ```
 
+The usage segment follows the Claude process environment. A second profile started with `CLAUDE_CONFIG_DIR` set to an absolute path gets that profile's Keychain item (macOS) or `$CLAUDE_CONFIG_DIR/.credentials.json` (Linux and Windows), and its own usage cache under `<dir>/ccline/`. See README, "Multiple Claude accounts".
+
 ## pi
 
 pi supports the same protocol via its `pi-statusline` package. In
