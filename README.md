@@ -11,7 +11,9 @@ A high-performance Claude Code statusline tool written in Rust with Git integrat
 
 ![CCometixLine](assets/img1.png)
 
-The statusline shows: Model | Directory | Git Branch Status | Context Window Information
+Configured statusline, drawn from stand-in data: a demo directory, a demo git commit, and placeholder quota numbers.
+
+The first line is model, directory, git, session name, session time, and output style. The second line is the context window, the 5-hour and 7-day usage quota, and cost. The lines after that are tools, agents, todos, environment, skills, and hooks. A fresh config enables model, directory, git, context, usage, cost, session, and output style. Turn the later lines on in `~/.claude/ccline/config.toml`.
 
 ## Supported AI Agents
 
@@ -39,10 +41,10 @@ Works with multiple AI coding agents, not just Claude Code:
 The usage segment reads the login of the Claude process that started it. Leave `claude` on `~/.claude`. Start the other profile with `CLAUDE_CONFIG_DIR` set to that directory's absolute path. The statusline command inherits the variable, so both profiles can call the same `ccline` binary. The binary's own path does not select the account.
 
 ```bash
-alias claude-talcum='CLAUDE_CONFIG_DIR="$HOME/.claude-talcum" claude'
+alias claude-work='CLAUDE_CONFIG_DIR="$HOME/.claude-work" claude'
 ```
 
-Put the same `statusLine` entry in each profile's `settings.json` (`~/.claude-talcum/settings.json` for the example above).
+Put the same `statusLine` entry in each profile's `settings.json` (`~/.claude-work/settings.json` for the example above). Use the absolute path you actually exported. `~/.claude-work` and `/Users/you/.claude-work` hash to different Keychain items.
 
 On macOS, Claude Code keeps the login in the Keychain. The default directory uses the item `Claude Code-credentials`. Any other directory uses `Claude Code-credentials-` plus the first 8 hex characters of SHA-256 over the NFC form of the exact directory string. `/Users/you/.claude-work` and `~/.claude-work` are different items, and a trailing slash is a different item again. When a directory is set, ccline does not fall back to `~/.claude`, so a missing login shows no usage instead of the other account.
 
@@ -111,11 +113,12 @@ dialects, and per-agent capability notes.
 ## Features
 
 ### Core Functionality
-- **Git integration** with branch, status, and tracking info  
+- **Git integration** with branch, status, short sha, and file stats
 - **Model display** with simplified Claude model names
-- **Usage tracking** based on transcript analysis
-- **Directory display** showing current workspace
-- **Minimal design** using Nerd Font icons
+- **Context window** from the transcript, or from a host `context_window` payload
+- **Usage quota** for the Claude login that started the process: 5-hour and 7-day bars, cached per credential store
+- **Directory, cost, session time, and output style**
+- **Extra lines** for tools, agents, todos, skills, hooks, environment, and session name
 
 ### Interactive TUI Features
 - **Interactive main menu** when executed without input
@@ -255,8 +258,10 @@ Move-Item "ccline.exe" "$env:USERPROFILE\.claude\ccline\"
 
 ### Build from Source
 
+Release archives and `npm install -g @cometix/ccline` install the upstream build. The per-profile usage login described above is in this repository. Build from source for that behavior.
+
 ```bash
-git clone https://github.com/Haleclipse/CCometixLine.git
+git clone https://github.com/lr00rl/CCometixLine.git
 cd CCometixLine
 cargo build --release
 
@@ -298,7 +303,7 @@ ccline --patch ~/.local/share/fnm/node-versions/v24.4.1/installation/lib/node_mo
 
 ## Default Segments
 
-Displays: `Directory | Git Branch Status | Model | Context Window`
+A fresh config shows model, directory, git, context window, usage quota, cost, session, and output style. The screenshot above also enables the optional lines.
 
 ### Git Status Indicators
 
@@ -333,7 +338,7 @@ All segments are configurable with:
 - Color customization
 - Format options
 
-Supported segments: Directory, Git, Model, Usage, Time, Cost, OutputStyle
+Supported segments: Model, Directory, Git, Context window, Usage, Cost, Session, Output style, Session name, Tools, Agents, Todos, Environment, Skills, Hooks, Update
 
 ### Model Configuration (`models.toml`)
 

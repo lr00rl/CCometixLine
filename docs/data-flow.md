@@ -34,10 +34,10 @@ ccline 有 **两个完全不同的数据源**：
 ```json
 {
   "session_id": "98e79635-...",
-  "transcript_path": "/Users/cdcd/.claude/projects/.../98e79635-....jsonl",
-  "cwd": "/Users/cdcd/.../CCometixLine",
+  "transcript_path": "~/.claude/projects/.../session.jsonl",
+  "cwd": "~/src/CCometixLine",
   "model": {"id": "claude-sonnet-4-6", "display_name": "Sonnet 4.6"},
-  "workspace": {"current_dir": "/Users/cdcd/.../CCometixLine"},
+  "workspace": {"current_dir": "~/src/CCometixLine"},
   "version": "2.1.63",
   "output_style": {"name": "Structural Thinking"},
   "cost": {
@@ -122,7 +122,7 @@ secondary = ""
 
 ### 2. **Directory** — 纯 stdin 数据
 ```
-input.workspace.current_dir = "/Users/cdcd/.../CCometixLine"
+input.workspace.current_dir = "~/src/CCometixLine"
     │
     ▼
 extract_directory_name()  // 取路径最后一段
@@ -376,7 +376,7 @@ secondary = "=> 4 skills"
   "parentUuid": "a0a0c525-2ce5-401b-9144-4ade76144c3e",
   "isSidechain": false,
   "userType": "external",
-  "cwd": "/Users/cdcd/roobli/RTFS_justTaste/custom_claude_statusline",
+  "cwd": "~/src/demo",
   "sessionId": "98e79635-989e-4bd2-b756-861bdb810341",
   "version": "2.1.63",
   "gitBranch": "HEAD",
