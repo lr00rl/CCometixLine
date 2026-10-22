@@ -185,8 +185,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn talcum_path_matches_known_keychain_suffix() {
-        assert_eq!(dir_key_suffix("/Users/cdcd/.claude-talcum"), "635b1af0");
+    fn work_profile_path_matches_known_keychain_suffix() {
+        assert_eq!(dir_key_suffix("/Users/alex/.claude-work"), "c381b4cb");
     }
 
     #[test]
@@ -205,25 +205,21 @@ mod tests {
 
     #[test]
     fn config_dir_selects_its_own_service() {
-        let store = resolve_store(None, Some("/Users/cdcd/.claude-talcum"), false);
-        assert_eq!(store.dir.as_deref(), Some("/Users/cdcd/.claude-talcum"));
-        assert_eq!(store.service, "Claude Code-credentials-635b1af0");
+        let store = resolve_store(None, Some("/Users/alex/.claude-work"), false);
+        assert_eq!(store.dir.as_deref(), Some("/Users/alex/.claude-work"));
+        assert_eq!(store.service, "Claude Code-credentials-c381b4cb");
     }
 
     #[test]
     fn empty_secure_storage_pins_the_default_store() {
-        let store = resolve_store(Some(""), Some("/Users/cdcd/.claude-talcum"), false);
+        let store = resolve_store(Some(""), Some("/Users/alex/.claude-work"), false);
         assert_eq!(store.dir, None);
         assert_eq!(store.service, "Claude Code-credentials");
     }
 
     #[test]
     fn secure_storage_wins_over_config_dir() {
-        let store = resolve_store(
-            Some("/tmp/secure"),
-            Some("/Users/cdcd/.claude-talcum"),
-            false,
-        );
+        let store = resolve_store(Some("/tmp/secure"), Some("/Users/alex/.claude-work"), false);
         assert_eq!(store.dir.as_deref(), Some("/tmp/secure"));
         assert_eq!(
             store.service,
@@ -233,10 +229,10 @@ mod tests {
 
     #[test]
     fn custom_oauth_inserts_the_infix() {
-        let store = resolve_store(None, Some("/Users/cdcd/.claude-talcum"), true);
+        let store = resolve_store(None, Some("/Users/alex/.claude-work"), true);
         assert_eq!(
             store.service,
-            "Claude Code-custom-oauth-credentials-635b1af0"
+            "Claude Code-custom-oauth-credentials-c381b4cb"
         );
     }
 
@@ -248,7 +244,7 @@ mod tests {
 
     #[test]
     fn keychain_account_falls_back_when_the_user_is_not_a_label() {
-        assert_eq!(keychain_account_label("cdcd"), "cdcd");
+        assert_eq!(keychain_account_label("alex"), "alex");
         assert_eq!(keychain_account_label("a.b_c-d"), "a.b_c-d");
         assert_eq!(keychain_account_label(""), "claude-code-user");
         assert_eq!(keychain_account_label("bad user"), "claude-code-user");
