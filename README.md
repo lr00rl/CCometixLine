@@ -4,6 +4,8 @@
 
 A high-performance Claude Code statusline tool written in Rust with Git integration, usage tracking, interactive TUI configuration, and Claude Code enhancement utilities.
 
+This is a fork of [Haleclipse/CCometixLine](https://github.com/Haleclipse/CCometixLine), the original by Haleclipse. The fork adds segments for tools, subagents, todos, the environment, the session name, skills, and hooks; `--codex` and `--kimi` modes; and usage tracking per Claude account. Build it from source to get these changes.
+
 ![Language:Rust](https://img.shields.io/static/v1?label=Language&message=Rust&color=orange&style=flat-square)
 ![License:MIT](https://img.shields.io/static/v1?label=License&message=MIT&color=blue&style=flat-square)
 
@@ -408,4 +410,4 @@ Contributions are welcome! Please feel free to submit issues or pull requests.
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](LICENSE). The original code is copyright 2025 Haleclipse, and the changes in this fork are copyright 2026 lr00rl, under the same license.
