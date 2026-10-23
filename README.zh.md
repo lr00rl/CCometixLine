@@ -4,6 +4,8 @@
 
 基于 Rust 的高性能 Claude Code 状态栏工具，集成 Git 信息、使用量跟踪、交互式 TUI 配置和 Claude Code 补丁工具。
 
+本仓库 fork 自 [Haleclipse/CCometixLine](https://github.com/Haleclipse/CCometixLine)，原作者是 Haleclipse。在原版之上增加了工具、子代理、待办、环境、会话名、技能和 hooks 这几段，`--codex` 和 `--kimi` 两种模式，以及按 Claude 账号分别统计用量。要用到这些改动，请从源码构建。
+
 ![Language:Rust](https://img.shields.io/static/v1?label=Language&message=Rust&color=orange&style=flat-square)
 ![License:MIT](https://img.shields.io/static/v1?label=License&message=MIT&color=blue&style=flat-square)
 
@@ -394,4 +396,4 @@ cargo build --release
 
 ## 许可证
 
-本项目采用 [MIT 许可证](LICENSE)。
+本项目采用 [MIT 许可证](LICENSE)。原版代码版权归 Haleclipse（2025），本 fork 的改动版权归 lr00rl（2026），同样采用 MIT 许可证。
